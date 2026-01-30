@@ -20,14 +20,19 @@ ENV SHELL=/bin/zsh
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.cargo/bin:${PATH}"
 
+# Install Starship
+RUN curl -sS https://starship.rs/install.sh | sh -s -- -y
+ENV PATH="/usr/local/bin:${PATH}"
+
 # Create workspace directory
 WORKDIR /workspace
 
-# Configure git safe directory
-RUN git config --global --add safe.directory /workspace
+# Configure git
+RUN git config --global --add safe.directory /workspace && \
+    git config --global user.name "Quentin Liance" && \
+    git config --global user.email "quentin.liance@gmail.com"
 
-# Set up oh-my-zsh theme and plugins
-RUN sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="agnoster"/' /root/.zshrc && \
-    echo 'plugins=(git python docker docker-compose)' >> /root/.zshrc
+# Configure Starship for zsh
+RUN echo 'eval "$(starship init zsh)"' >> /root/.zshrc
 
 CMD ["/bin/zsh"]

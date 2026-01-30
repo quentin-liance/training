@@ -1,0 +1,63 @@
+name: CI
+
+# Déclenche le workflow sur push et pull request vers main/develop
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Matrice pour tester sur plusieurs versions de Python
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      # Récupère le code du repository
+      - uses: actions/checkout@v4
+
+      # Configure la version de Python spécifiée dans la matrice
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Installe UV (gestionnaire de packages Python rapide)
+      - name: Install UV
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      # Crée un environnement virtuel et installe les dépendances
+      - name: Create virtual environment and install dependencies
+        run: |
+          uv venv
+          source .venv/bin/activate
+          uv pip install -e '.[dev]'
+
+      # Vérifie le formatage et la qualité du code avec Ruff
+      - name: Run linting
+        run: |
+          source .venv/bin/activate
+          ruff check .
+          ruff format --check .
+
+      # Vérifie les types avec mypy
+      - name: Run type checking
+        run: |
+          source .venv/bin/activate
+          mypy src/
+
+      # Exécute les tests avec couverture de code
+      - name: Run tests
+        run: |
+          source .venv/bin/activate
+          pytest tests/ -v --cov=src --cov-report=xml --cov-report=term
+
+      # Upload le rapport de couverture vers Codecov (optionnel)
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false

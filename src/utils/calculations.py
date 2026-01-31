@@ -1,6 +1,11 @@
 """Utility functions for margin calculations."""
 
+import logging
+
 import pandas as pd
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 
 def calculate_totals(incomes_df: pd.DataFrame, costs_df: pd.DataFrame) -> dict[str, float]:
@@ -20,13 +25,23 @@ def calculate_totals(incomes_df: pd.DataFrame, costs_df: pd.DataFrame) -> dict[s
     required_cols = ["Amount"]
     for col in required_cols:
         if col not in incomes_df.columns:
+            logger.error(f"Validation failed: incomes_df missing required column '{col}'")
             raise ValueError(f"incomes_df missing required column: {col}")
         if col not in costs_df.columns:
+            logger.error(f"Validation failed: costs_df missing required column '{col}'")
             raise ValueError(f"costs_df missing required column: {col}")
+
+    logger.debug(
+        f"Calculating totals for {len(incomes_df)} income rows and {len(costs_df)} cost rows"
+    )
 
     total_income = float(incomes_df["Amount"].sum()) if not incomes_df.empty else 0.0
     total_costs = float(costs_df["Amount"].sum()) if not costs_df.empty else 0.0
     net_margin = total_income - total_costs
+
+    logger.info(
+        f"Totals: income={total_income:.2f}, " f"costs={total_costs:.2f}, margin={net_margin:.2f}"
+    )
 
     return {"total_income": total_income, "total_costs": total_costs, "net_margin": net_margin}
 
@@ -48,9 +63,13 @@ def calculate_margins(incomes_df: pd.DataFrame, costs_df: pd.DataFrame) -> pd.Da
     required_cols = ["Month", "Amount"]
     for col in required_cols:
         if col not in incomes_df.columns:
+            logger.error(f"Validation failed: incomes_df missing required column '{col}'")
             raise ValueError(f"incomes_df missing required column: {col}")
         if col not in costs_df.columns:
+            logger.error(f"Validation failed: costs_df missing required column '{col}'")
             raise ValueError(f"costs_df missing required column: {col}")
+
+    logger.debug(f"Calculating margins for {len(incomes_df)} incomes, " f"{len(costs_df)} costs")
 
     # Group by month
     income_by_month = incomes_df.groupby("Month")["Amount"].sum().reset_index()
@@ -69,6 +88,7 @@ def calculate_margins(incomes_df: pd.DataFrame, costs_df: pd.DataFrame) -> pd.Da
         axis=1,
     )
 
+    logger.info(f"Margins calculated for {len(margin_df)} months")
     return margin_df
 
 
@@ -89,12 +109,21 @@ def calculate_margin_by_category(
     """
     # Validate input DataFrames
     if "Category" not in incomes_df.columns or "Amount" not in incomes_df.columns:
+        logger.error("Validation failed: incomes_df missing required columns: Category or Amount")
         raise ValueError("incomes_df missing required columns: Category or Amount")
     if "Category" not in costs_df.columns or "Amount" not in costs_df.columns:
+        logger.error("Validation failed: costs_df missing required columns: Category or Amount")
         raise ValueError("costs_df missing required columns: Category or Amount")
+
+    logger.debug(f"Calculating by category: {len(incomes_df)} incomes, " f"{len(costs_df)} costs")
 
     income_summary = incomes_df.groupby("Category")["Amount"].sum()
     cost_summary = costs_df.groupby("Category")["Amount"].sum()
+
+    logger.info(
+        f"Margins by category: {len(income_summary)} income, "
+        f"{len(cost_summary)} cost categories"
+    )
 
     return {
         "income_by_category": income_summary.to_dict(),

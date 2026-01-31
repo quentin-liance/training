@@ -1,5 +1,7 @@
 """Streamlit app for company margin analysis."""
 
+import logging
+
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -7,13 +9,27 @@ import streamlit as st
 from src.data.generator import generate_fake_data
 from src.utils.calculations import calculate_margins, calculate_totals
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("app.log"), logging.StreamHandler()],
+)
+logger = logging.getLogger(__name__)
+
 st.set_page_config(page_title="Company Margin Analyzer", page_icon="📊", layout="wide")
+
+logger.info("Application started")
 
 st.title("📊 Company Margin Analysis")
 st.markdown("---")
 
 # Generate fake data
+logger.info("Generating fake data...")
 data = generate_fake_data()
+logger.debug(
+    f"Generated {len(data['incomes'])} income records and {len(data['costs'])} cost records"
+)
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -29,6 +45,10 @@ selected_categories = st.sidebar.multiselect(
     default=data["incomes"]["Category"].unique(),
 )
 
+logger.debug(
+    f"Filters applied: {len(selected_months)} months, {len(selected_categories)} categories"
+)
+
 # Filter data
 filtered_incomes = data["incomes"][
     (data["incomes"]["Month"].isin(selected_months))
@@ -37,8 +57,12 @@ filtered_incomes = data["incomes"][
 filtered_costs = data["costs"][data["costs"]["Month"].isin(selected_months)]
 
 # Calculate metrics
+logger.info("Calculating totals and margins...")
 totals = calculate_totals(filtered_incomes, filtered_costs)
 margin_data = calculate_margins(filtered_incomes, filtered_costs)
+logger.debug(
+    f"Calculations: income={totals['total_income']:.2f}, " f"margin={totals['net_margin']:.2f}"
+)
 
 # Display KPIs
 col1, col2, col3, col4 = st.columns(4)
@@ -70,7 +94,7 @@ with tab1:
             y=["Income", "Costs", "Margin"],
             title="Income, Costs & Margin Over Time",
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     with col2:
         st.subheader("Income vs Costs Breakdown")
@@ -83,7 +107,7 @@ with tab1:
             names="Type",
             color_discrete_sequence=["#2ecc71", "#e74c3c"],
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
 with tab2:
     st.subheader("💰 Detailed Income Analysis")
@@ -101,17 +125,17 @@ with tab2:
             color="Amount",
             color_continuous_scale="Greens",
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     with col2:
         # Income by month
         income_by_month = filtered_incomes.groupby("Month")["Amount"].sum().reset_index()
         fig = px.area(income_by_month, x="Month", y="Amount", title="Monthly Income Trend")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     # Detailed income table
     st.subheader("Income Details")
-    st.dataframe(filtered_incomes.style.format({"Amount": "${:,.2f}"}), use_container_width=True)
+    st.dataframe(filtered_incomes.style.format({"Amount": "${:,.2f}"}), width="stretch")
 
 with tab3:
     st.subheader("💸 Detailed Cost Analysis")
@@ -129,7 +153,7 @@ with tab3:
             color="Amount",
             color_continuous_scale="Reds",
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     with col2:
         # Costs by month
@@ -141,11 +165,11 @@ with tab3:
             title="Monthly Cost Trend",
             color_discrete_sequence=["#e74c3c"],
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     # Detailed costs table
     st.subheader("Cost Details")
-    st.dataframe(filtered_costs.style.format({"Amount": "${:,.2f}"}), use_container_width=True)
+    st.dataframe(filtered_costs.style.format({"Amount": "${:,.2f}"}), width="stretch")
 
 with tab4:
     st.subheader("📊 Comprehensive Data View")
@@ -154,11 +178,11 @@ with tab4:
 
     with col1:
         st.write("**Income Data**")
-        st.dataframe(filtered_incomes, use_container_width=True)
+        st.dataframe(filtered_incomes, width="stretch")
 
     with col2:
         st.write("**Cost Data**")
-        st.dataframe(filtered_costs, use_container_width=True)
+        st.dataframe(filtered_costs, width="stretch")
 
     # Download buttons
     st.subheader("Export Data")

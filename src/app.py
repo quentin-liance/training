@@ -1,10 +1,10 @@
-"""Application Streamlit minimaliste."""
+"""Minimalist Streamlit application."""
 
-# Import de la bibliothèque Streamlit pour créer l'interface web
+# Import Streamlit library to create the web interface
 import streamlit as st
 
 # ========================================
-# Fonctions utilitaires
+# Utility Functions
 # ========================================
 
 
@@ -17,7 +17,7 @@ def get_greeting(name: str) -> str:
     Returns:
         Greeting message
     """
-    # Formatte et retourne un message de salutation personnalisé
+    # Format and return a personalized greeting message
     return f"Hello, {name}!"
 
 
@@ -31,56 +31,56 @@ def calculate_sum(a: float, b: float) -> float:
     Returns:
         Sum of a and b
     """
-    # Effectue l'addition des deux nombres
+    # Perform the addition of the two numbers
     return a + b
 
 
 # ========================================
-# Application principale
+# Main Application
 # ========================================
 
 
 def main() -> None:
     """Main Streamlit application."""
-    # Configuration du titre principal de l'application
+    # Configure the main title of the application
     st.title("🎈 Application Streamlit Minimaliste")
 
     # ========================================
-    # Section 1 : Salutation
+    # Section 1: Greeting
     # ========================================
     st.header("1. Salutation")
-    # Champ de saisie pour le nom de l'utilisateur
+    # Input field for the user's name
     name = st.text_input("Entrez votre nom", value="World")
     if name:
-        # Affiche le message de salutation en vert
+        # Display the greeting message in green
         st.success(get_greeting(name))
 
     # ========================================
-    # Section 2 : Calculateur
+    # Section 2: Calculator
     # ========================================
     st.header("2. Calculateur")
-    # Création de deux colonnes pour une disposition côte à côte
+    # Create two columns for side-by-side layout
     col1, col2 = st.columns(2)
 
-    # Première colonne : premier nombre
+    # First column: first number
     with col1:
         num1 = st.number_input("Premier nombre", value=0.0)
 
-    # Deuxième colonne : deuxième nombre
+    # Second column: second number
     with col2:
         num2 = st.number_input("Deuxième nombre", value=0.0)
 
-    # Bouton pour déclencher le calcul
+    # Button to trigger the calculation
     if st.button("Calculer la somme"):
         result = calculate_sum(num1, num2)
-        # Affiche le résultat dans une boîte d'information bleue
+        # Display the result in a blue info box
         st.info(f"Résultat: {num1} + {num2} = {result}")
 
     # ========================================
-    # Section 3 : Informations
+    # Section 3: Information
     # ========================================
     st.header("3. Informations")
-    # Section déroulante pour afficher des informations supplémentaires
+    # Expandable section to display additional information
     with st.expander("À propos"):
         st.write(
             """
@@ -92,6 +92,6 @@ def main() -> None:
         )
 
 
-# Point d'entrée de l'application
+# Application entry point
 if __name__ == "__main__":
     main()

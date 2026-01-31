@@ -13,6 +13,7 @@ dependencies = [
     "pandas>=2.2.0",      # Data manipulation and analysis
     "numpy>=1.26.3",      # Numerical computing
     "plotly>=5.18.0",     # Interactive visualization library
+    "loguru>=0.7.0",      # Modern logging with better ergonomics
 ]
 
 # Optional dependencies for development environment

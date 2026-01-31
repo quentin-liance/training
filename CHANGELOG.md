@@ -7,12 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Upgraded logging system to Loguru** for better developer experience
+  - Automatic colorization in console
+  - Structured log format with module, function, and line information
+  - File rotation (500 MB) and retention (10 days) with automatic compression
+  - Separate log levels for console (INFO) and file (DEBUG)
+  - Logs saved to `logs/` directory with daily rotation
+- Replaced Python's standard `logging` module with `loguru` throughout the application
+- Added `loguru>=0.7.0` to project dependencies
+
 ### Added
 - MIT License
 - Comprehensive logging system throughout the application
 - Logger in `calculations.py` with INFO and DEBUG levels
 - Logger in `app.py` with file and console handlers
 - CHANGELOG.md following Keep a Changelog format
+- `logs/` directory in `.gitignore`
 
 ### Changed
 - Replaced deprecated `use_container_width=True` with `width='stretch'` in all Streamlit components

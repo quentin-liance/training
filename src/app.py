@@ -1,21 +1,36 @@
 """Streamlit app for company margin analysis."""
 
-import logging
+import sys
 
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from loguru import logger
 
 from src.data.generator import generate_fake_data
 from src.utils.calculations import calculate_margins, calculate_totals
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("app.log"), logging.StreamHandler()],
+# Configure loguru
+logger.remove()  # Remove default handler
+logger.add(
+    sys.stderr,
+    format=(
+        "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+        "<level>{level: <8}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan> - "
+        "<level>{message}</level>"
+    ),
+    level="INFO",
+    colorize=True,
 )
-logger = logging.getLogger(__name__)
+logger.add(
+    "logs/app_{time:YYYY-MM-DD}.log",
+    rotation="500 MB",
+    retention="10 days",
+    compression="zip",
+    format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
+    level="DEBUG",
+)
 
 st.set_page_config(page_title="Company Margin Analyzer", page_icon="📊", layout="wide")
 
@@ -61,7 +76,7 @@ logger.info("Calculating totals and margins...")
 totals = calculate_totals(filtered_incomes, filtered_costs)
 margin_data = calculate_margins(filtered_incomes, filtered_costs)
 logger.debug(
-    f"Calculations: income={totals['total_income']:.2f}, " f"margin={totals['net_margin']:.2f}"
+    f"Calculations: income={totals['total_income']:.2f}, margin={totals['net_margin']:.2f}"
 )
 
 # Display KPIs

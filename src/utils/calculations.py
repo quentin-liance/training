@@ -1,11 +1,7 @@
 """Utility functions for margin calculations."""
 
-import logging
-
 import pandas as pd
-
-# Configure logger for this module
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 def calculate_totals(incomes_df: pd.DataFrame, costs_df: pd.DataFrame) -> dict[str, float]:
@@ -40,7 +36,7 @@ def calculate_totals(incomes_df: pd.DataFrame, costs_df: pd.DataFrame) -> dict[s
     net_margin = total_income - total_costs
 
     logger.info(
-        f"Totals: income={total_income:.2f}, " f"costs={total_costs:.2f}, margin={net_margin:.2f}"
+        f"Totals: income={total_income:.2f}, costs={total_costs:.2f}, margin={net_margin:.2f}"
     )
 
     return {"total_income": total_income, "total_costs": total_costs, "net_margin": net_margin}
@@ -69,7 +65,7 @@ def calculate_margins(incomes_df: pd.DataFrame, costs_df: pd.DataFrame) -> pd.Da
             logger.error(f"Validation failed: costs_df missing required column '{col}'")
             raise ValueError(f"costs_df missing required column: {col}")
 
-    logger.debug(f"Calculating margins for {len(incomes_df)} incomes, " f"{len(costs_df)} costs")
+    logger.debug(f"Calculating margins for {len(incomes_df)} incomes, {len(costs_df)} costs")
 
     # Group by month
     income_by_month = incomes_df.groupby("Month")["Amount"].sum().reset_index()
@@ -115,14 +111,13 @@ def calculate_margin_by_category(
         logger.error("Validation failed: costs_df missing required columns: Category or Amount")
         raise ValueError("costs_df missing required columns: Category or Amount")
 
-    logger.debug(f"Calculating by category: {len(incomes_df)} incomes, " f"{len(costs_df)} costs")
+    logger.debug(f"Calculating by category: {len(incomes_df)} incomes, {len(costs_df)} costs")
 
     income_summary = incomes_df.groupby("Category")["Amount"].sum()
     cost_summary = costs_df.groupby("Category")["Amount"].sum()
 
     logger.info(
-        f"Margins by category: {len(income_summary)} income, "
-        f"{len(cost_summary)} cost categories"
+        f"Margins by category: {len(income_summary)} income, {len(cost_summary)} cost categories"
     )
 
     return {

@@ -1,13 +1,21 @@
+# ========================================
+# Docker Compose Configuration
+# ========================================
 version: '3.8'
 
 services:
   app:
+    # Build configuration for the development container
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: .  # Build context directory
+      dockerfile: Dockerfile  # Dockerfile to use
+    # Mount the project directory into the container
     volumes:
-      - ..:/workspace:cached
+      - ..:/workspace:cached  # Cached mode for better performance on macOS/Windows
+    # Keep container running indefinitely
     command: sleep infinity
+    # Environment variables for the container
     environment:
-      - PYTHONUNBUFFERED=1
+      - PYTHONUNBUFFERED=1  # Disable Python output buffering for immediate logs
+    # Set the working directory inside the container
     working_dir: /workspace

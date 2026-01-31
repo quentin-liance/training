@@ -1,63 +1,70 @@
+# ========================================
+# Continuous Integration Workflow
+# ========================================
+# This workflow runs automated tests and quality checks
+# on every push and pull request to main/develop branches
+
 name: CI
 
-# Déclenche le workflow sur push et pull request vers main/develop
+# Trigger conditions for the workflow
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop]  # Run on pushes to these branches
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop]  # Run on pull requests to these branches
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    # Matrice pour tester sur plusieurs versions de Python
+    runs-on: ubuntu-latest  # Use latest Ubuntu runner
+
+    # Test matrix: run tests on multiple Python versions
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
 
     steps:
-      # Récupère le code du repository
+      # Step 1: Check out the repository code
       - uses: actions/checkout@v4
 
-      # Configure la version de Python spécifiée dans la matrice
+      # Step 2: Set up the specified Python version
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
-      # Installe UV (gestionnaire de packages Python rapide)
+      # Step 3: Install UV package manager (faster than pip)
       - name: Install UV
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
-      # Crée un environnement virtuel et installe les dépendances
+      # Step 4: Create virtual environment and install dependencies
       - name: Create virtual environment and install dependencies
         run: |
           uv venv
           source .venv/bin/activate
           uv pip install -e '.[dev]'
 
-      # Vérifie le formatage et la qualité du code avec Ruff
+      # Step 5: Run code linting and formatting checks with Ruff
       - name: Run linting
         run: |
           source .venv/bin/activate
-          ruff check .
-          ruff format --check .
+          ruff check .           # Check for code quality issues
+          ruff format --check .  # Verify code formatting
 
-      # Vérifie les types avec mypy
+      # Step 6: Run static type checking with mypy
       - name: Run type checking
         run: |
           source .venv/bin/activate
           mypy src/
 
-      # Exécute les tests avec couverture de code
+      # Step 7: Run the test suite with coverage measurement
       - name: Run tests
         run: |
           source .venv/bin/activate
           pytest tests/ -v --cov=src --cov-report=xml --cov-report=term
 
-      # Upload le rapport de couverture vers Codecov (optionnel)
+      # Step 8: Upload coverage report to Codecov (optional)
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
-          file: ./coverage.xml
-          fail_ci_if_error: false
+          file: ./coverage.xml  # Coverage report file
+          fail_ci_if_error: false  # Don't fail CI if upload fails

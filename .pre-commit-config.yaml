@@ -1,38 +1,58 @@
+# ========================================
+# Pre-commit Configuration
+# ========================================
+# Hooks that run automatically before each git commit
+# to maintain code quality and consistency
+
 repos:
+  # Standard pre-commit hooks for general code quality
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
+      # Remove trailing whitespace from all files
       - id: trailing-whitespace
-        exclude: ^notebooks/
+        exclude: ^notebooks/  # Skip notebook files
+      # Ensure files end with a newline
       - id: end-of-file-fixer
-        exclude: ^notebooks/
+        exclude: ^notebooks/  # Skip notebook files
+      # Validate YAML file syntax
       - id: check-yaml
+      # Prevent committing large files (default: >500KB)
       - id: check-added-large-files
+      # Validate JSON file syntax
       - id: check-json
+      # Validate TOML file syntax
       - id: check-toml
+      # Check for unresolved merge conflict markers
       - id: check-merge-conflict
+      # Detect Python debug statements (pdb, ipdb, etc.)
       - id: debug-statements
-        exclude: ^notebooks/
+        exclude: ^notebooks/  # Skip notebook files
 
-  # Nettoie les outputs des notebooks avant commit
+  # Strip output from Jupyter notebooks before commit
+  # Keeps notebooks clean and reduces git diff noise
   - repo: https://github.com/kynan/nbstripout
     rev: 0.7.1
     hooks:
       - id: nbstripout
 
+  # Ruff: Fast Python linter and formatter
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.15
     hooks:
+      # Ruff linter: check code quality and auto-fix issues
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
         exclude: ^notebooks/
+      # Ruff formatter: format code according to style rules
       - id: ruff-format
         exclude: ^notebooks/
 
+  # Mypy: Static type checker for Python
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.8.0
     hooks:
       - id: mypy
-        additional_dependencies: []
-        args: [--ignore-missing-imports]
-        exclude: ^notebooks/
+        additional_dependencies: []  # No additional type stubs needed
+        args: [--ignore-missing-imports]  # Ignore imports without type hints
+        exclude: ^notebooks/  # Skip notebook files

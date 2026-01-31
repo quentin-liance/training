@@ -1,35 +1,47 @@
+# ========================================
+# Project Metadata
+# ========================================
 [project]
-name = "training"
-version = "0.1.0"
-description = "Training project"
-readme = "README.md"
-requires-python = ">=3.11"
+name = "training"  # Project name
+version = "0.1.0"  # Current version following semantic versioning
+description = "Training project"  # Short project description
+readme = "README.md"  # Path to README file
+requires-python = ">=3.11"  # Minimum Python version required
+# Core dependencies for the application
 dependencies = [
-    "streamlit>=1.30.0",
+    "streamlit>=1.30.0",  # Web framework for creating data apps
 ]
 
+# Optional dependencies for development environment
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.4.0",
-    "pytest-cov>=4.1.0",
-    "ruff>=0.1.15",
-    "mypy>=1.8.0",
-    "pre-commit>=3.6.0",
-    "ipython>=8.20.0",
-    "ipykernel>=6.29.0",
-    "nbstripout>=0.7.0",
+    "pytest>=7.4.0",       # Testing framework
+    "pytest-cov>=4.1.0",   # Code coverage plugin for pytest
+    "ruff>=0.1.15",        # Fast Python linter and formatter
+    "mypy>=1.8.0",         # Static type checker
+    "pre-commit>=3.6.0",   # Git hooks manager for code quality
+    "ipython>=8.20.0",     # Enhanced Python interactive shell
+    "ipykernel>=6.29.0",   # Jupyter kernel for notebooks
+    "nbstripout>=0.7.0",   # Strip output from Jupyter notebooks
 ]
 
+# ========================================
+# Build Configuration
+# ========================================
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["hatchling"]  # Build backend requirement
+build-backend = "hatchling.build"  # Specifies Hatchling as the build backend
 
+# Configure which packages to include in the wheel distribution
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src"]  # Include the src directory in the package
 
+# ========================================
+# Ruff Linter Configuration
+# ========================================
 [tool.ruff]
-line-length = 100
-target-version = "py311"
+line-length = 100  # Maximum line length for code formatting
+target-version = "py311"  # Target Python version for linting rules
 
 [tool.ruff.lint]
 select = [
@@ -51,38 +63,51 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 
+# ========================================
+# Mypy Type Checker Configuration
+# ========================================
 [tool.mypy]
-python_version = "3.11"
-warn_return_any = true
-warn_unused_configs = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-strict_equality = true
-check_untyped_defs = true
-disallow_untyped_defs = false  # Progressif: à activer plus tard
-exclude = ["tests/", "data/"]
+python_version = "3.11"  # Python version for type checking
+warn_return_any = true  # Warn when returning Any from typed function
+warn_unused_configs = true  # Warn about unused mypy configuration options
+warn_redundant_casts = true  # Warn about unnecessary type casts
+warn_unused_ignores = true  # Warn about unused '# type: ignore' comments
+strict_equality = true  # Enforce strict equality checks
+check_untyped_defs = true  # Check function bodies even without type annotations
+disallow_untyped_defs = false  # Progressive: enable later for stricter typing
+exclude = ["tests/", "data/"]  # Directories to exclude from type checking
 
+# ========================================
+# Pytest Configuration
+# ========================================
 [tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
+testpaths = ["tests"]  # Directory containing test files
+python_files = ["test_*.py"]  # Pattern for test file names
+python_classes = ["Test*"]  # Pattern for test class names
+python_functions = ["test_*"]  # Pattern for test function names
+# Additional options: verbose, strict markers, short traceback, show missing coverage
 addopts = "-v --strict-markers --tb=short --cov-report=term-missing"
+# Custom test markers for categorizing tests
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
 ]
 
+# ========================================
+# Coverage Configuration
+# ========================================
 [tool.coverage.run]
-source = ["src"]
-omit = ["tests/*", "**/__init__.py"]
+source = ["src"]  # Measure coverage for source code in src directory
+omit = ["tests/*", "**/__init__.py"]  # Exclude test files and __init__.py from coverage
 
+# Configure coverage report output
 [tool.coverage.report]
+# Lines to exclude from coverage analysis
 exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if __name__ == .__main__.:",
-    "if TYPE_CHECKING:",
+    "pragma: no cover",  # Explicit coverage exclusion marker
+    "def __repr__",  # String representation methods
+    "raise AssertionError",  # Assertion errors
+    "raise NotImplementedError",  # Abstract method placeholders
+    "if __name__ == .__main__.:",  # Script entry point
+    "if TYPE_CHECKING:",  # Type checking imports
 ]

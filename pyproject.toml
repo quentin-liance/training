@@ -69,6 +69,10 @@ ignore = [
 # ========================================
 # Mypy Type Checker Configuration
 # ========================================
+[[tool.mypy.overrides]]
+module = ["plotly.*", "streamlit.*", "pandas.*", "numpy.*"]
+ignore_missing_imports = true
+
 [tool.mypy]
 python_version = "3.11"  # Python version for type checking
 warn_return_any = true  # Warn when returning Any from typed function
@@ -78,7 +82,9 @@ warn_unused_ignores = true  # Warn about unused '# type: ignore' comments
 strict_equality = true  # Enforce strict equality checks
 check_untyped_defs = true  # Check function bodies even without type annotations
 disallow_untyped_defs = false  # Progressive: enable later for stricter typing
-exclude = ["tests/", "data/"]  # Directories to exclude from type checking
+exclude = ["tests/"]  # Directories to exclude from type checking
+namespace_packages = true  # Enable namespace packages
+explicit_package_bases = true  # Use explicit package bases
 
 # ========================================
 # Pytest Configuration

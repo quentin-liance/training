@@ -3,9 +3,9 @@
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from utils.calculations import calculate_margins, calculate_totals
 
-from data.generator import generate_fake_data
+from src.data.generator import generate_fake_data
+from src.utils.calculations import calculate_margins, calculate_totals
 
 st.set_page_config(page_title="Company Margin Analyzer", page_icon="📊", layout="wide")
 

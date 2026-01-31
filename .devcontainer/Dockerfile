@@ -5,13 +5,18 @@
 FROM python:3.12-slim
 
 # Install essential system dependencies for development
+# - git: Version control
+# - curl: Command-line tool for transferring data
+# - zsh: Enhanced shell
+# - wget: Network downloader
+# - build-essential: Compilers and build tools
 RUN apt-get update && apt-get install -y \
-    git \              # Version control
-    curl \             # Command-line tool for transferring data
-    zsh \              # Enhanced shell
-    wget \             # Network downloader
-    build-essential \ # Compilers and build tools
-    && rm -rf /var/lib/apt/lists/*  # Clean up to reduce image size
+    git \
+    curl \
+    zsh \
+    wget \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install oh-my-zsh for enhanced shell experience
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended

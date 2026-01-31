@@ -10,6 +10,9 @@ requires-python = ">=3.11"  # Minimum Python version required
 # Core dependencies for the application
 dependencies = [
     "streamlit>=1.30.0",  # Web framework for creating data apps
+    "pandas>=2.2.0",      # Data manipulation and analysis
+    "numpy>=1.26.3",      # Numerical computing
+    "plotly>=5.18.0",     # Interactive visualization library
 ]
 
 # Optional dependencies for development environment

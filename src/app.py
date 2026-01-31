@@ -1,146 +1,183 @@
-"""Minimalist Streamlit application."""
+"""Streamlit app for company margin analysis."""
 
-# Import Streamlit library to create the web interface
+import pandas as pd
+import plotly.express as px
 import streamlit as st
+from utils.calculations import calculate_margins, calculate_totals
 
-# Import database functions for storing results
-from src.database import (
-    get_calculations,
-    get_greetings,
-    init_db,
-    save_calculation,
-    save_greeting,
+from data.generator import generate_fake_data
+
+st.set_page_config(page_title="Company Margin Analyzer", page_icon="📊", layout="wide")
+
+st.title("📊 Company Margin Analysis")
+st.markdown("---")
+
+# Generate fake data
+data = generate_fake_data()
+
+# Sidebar filters
+st.sidebar.header("Filters")
+selected_months = st.sidebar.multiselect(
+    "Select Months",
+    options=data["incomes"]["Month"].unique(),
+    default=data["incomes"]["Month"].unique(),
 )
 
-# Initialize database on module load
-init_db()
+selected_categories = st.sidebar.multiselect(
+    "Select Income Categories",
+    options=data["incomes"]["Category"].unique(),
+    default=data["incomes"]["Category"].unique(),
+)
 
-# ========================================
-# Utility Functions
-# ========================================
+# Filter data
+filtered_incomes = data["incomes"][
+    (data["incomes"]["Month"].isin(selected_months))
+    & (data["incomes"]["Category"].isin(selected_categories))
+]
+filtered_costs = data["costs"][data["costs"]["Month"].isin(selected_months)]
 
+# Calculate metrics
+totals = calculate_totals(filtered_incomes, filtered_costs)
+margin_data = calculate_margins(filtered_incomes, filtered_costs)
 
-def get_greeting(name: str) -> str:
-    """Generate a greeting message.
+# Display KPIs
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric("Total Income", f"${totals['total_income']:,.2f}")
+with col2:
+    st.metric("Total Costs", f"${totals['total_costs']:,.2f}")
+with col3:
+    st.metric("Net Margin", f"${totals['net_margin']:,.2f}")
+with col4:
+    margin_pct = (
+        (totals["net_margin"] / totals["total_income"] * 100) if totals["total_income"] > 0 else 0
+    )
+    st.metric("Margin %", f"{margin_pct:.1f}%")
 
-    Args:
-        name: Name to greet
+st.markdown("---")
 
-    Returns:
-        Greeting message
-    """
-    # Format and return a personalized greeting message
-    return f"Hello, {name}!"
+# Tabs for different views
+tab1, tab2, tab3, tab4 = st.tabs(["📈 Overview", "💰 Incomes", "💸 Costs", "📊 Detailed Data"])
 
-
-def calculate_sum(a: float, b: float) -> float:
-    """Calculate the sum of two numbers.
-
-    Args:
-        a: First number
-        b: Second number
-
-    Returns:
-        Sum of a and b
-    """
-    # Perform the addition of the two numbers
-    return a + b
-
-
-# ========================================
-# Main Application
-# ========================================
-
-
-def main() -> None:
-    """Main Streamlit application."""
-    # Configure the main title of the application
-    st.title("🎈 Application Streamlit Minimaliste")
-
-    # ========================================
-    # Section 1: Greeting
-    # ========================================
-    st.header("1. Salutation")
-    # Input field for the user's name
-    name = st.text_input("Entrez votre nom", value="World")
-    if name:
-        # Display the greeting message in green
-        st.success(get_greeting(name))
-        # Save the greeting to the database
-        if st.session_state.get("last_greeting_name") != name:
-            save_greeting(name)
-            st.session_state["last_greeting_name"] = name
-
-    # ========================================
-    # Section 2: Calculator
-    # ========================================
-    st.header("2. Calculateur")
-    # Create two columns for side-by-side layout
+with tab1:
     col1, col2 = st.columns(2)
 
-    # First column: first number
     with col1:
-        num1 = st.number_input("Premier nombre", value=0.0)
+        st.subheader("Monthly Margin Trend")
+        fig = px.line(
+            margin_data,
+            x="Month",
+            y=["Income", "Costs", "Margin"],
+            title="Income, Costs & Margin Over Time",
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-    # Second column: second number
     with col2:
-        num2 = st.number_input("Deuxième nombre", value=0.0)
+        st.subheader("Income vs Costs Breakdown")
+        breakdown_data = pd.DataFrame(
+            {"Type": ["Income", "Costs"], "Amount": [totals["total_income"], totals["total_costs"]]}
+        )
+        fig = px.pie(
+            breakdown_data,
+            values="Amount",
+            names="Type",
+            color_discrete_sequence=["#2ecc71", "#e74c3c"],
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-    # Button to trigger the calculation
-    if st.button("Calculer la somme"):
-        result = calculate_sum(num1, num2)
-        # Display the result in a blue info box
-        st.info(f"Résultat: {num1} + {num2} = {result}")
-        # Save the calculation to the database
-        save_calculation(num1, num2, result)
-        st.success("✅ Résultat enregistré dans la base de données")
+with tab2:
+    st.subheader("💰 Detailed Income Analysis")
 
-    # ========================================
-    # Section 3: Information
-    # ========================================
-    st.header("3. Informations")
-    # Expandable section to display additional information
-    with st.expander("À propos"):
-        st.write(
-            """
-        Cette application démontre :
-        - Interface utilisateur simple avec Streamlit
-        - Fonctions testables
-        - Structure modulaire
-        - Stockage des résultats en base de données SQLite
-        """
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Income by category
+        income_by_category = filtered_incomes.groupby("Category")["Amount"].sum().reset_index()
+        fig = px.bar(
+            income_by_category,
+            x="Category",
+            y="Amount",
+            title="Income by Category",
+            color="Amount",
+            color_continuous_scale="Greens",
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col2:
+        # Income by month
+        income_by_month = filtered_incomes.groupby("Month")["Amount"].sum().reset_index()
+        fig = px.area(income_by_month, x="Month", y="Amount", title="Monthly Income Trend")
+        st.plotly_chart(fig, use_container_width=True)
+
+    # Detailed income table
+    st.subheader("Income Details")
+    st.dataframe(filtered_incomes.style.format({"Amount": "${:,.2f}"}), use_container_width=True)
+
+with tab3:
+    st.subheader("💸 Detailed Cost Analysis")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Costs by category
+        costs_by_category = filtered_costs.groupby("Category")["Amount"].sum().reset_index()
+        fig = px.bar(
+            costs_by_category,
+            x="Category",
+            y="Amount",
+            title="Costs by Category",
+            color="Amount",
+            color_continuous_scale="Reds",
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col2:
+        # Costs by month
+        costs_by_month = filtered_costs.groupby("Month")["Amount"].sum().reset_index()
+        fig = px.area(
+            costs_by_month,
+            x="Month",
+            y="Amount",
+            title="Monthly Cost Trend",
+            color_discrete_sequence=["#e74c3c"],
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    # Detailed costs table
+    st.subheader("Cost Details")
+    st.dataframe(filtered_costs.style.format({"Amount": "${:,.2f}"}), use_container_width=True)
+
+with tab4:
+    st.subheader("📊 Comprehensive Data View")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.write("**Income Data**")
+        st.dataframe(filtered_incomes, use_container_width=True)
+
+    with col2:
+        st.write("**Cost Data**")
+        st.dataframe(filtered_costs, use_container_width=True)
+
+    # Download buttons
+    st.subheader("Export Data")
+    col1, col2 = st.columns(2)
+
+    with col1:
+        csv_income = filtered_incomes.to_csv(index=False)
+        st.download_button(
+            label="Download Income Data (CSV)",
+            data=csv_income,
+            file_name="income_data.csv",
+            mime="text/csv",
         )
 
-    # ========================================
-    # Section 4: History
-    # ========================================
-    st.header("4. Historique")
-
-    # Display calculation history
-    with st.expander("📊 Historique des calculs", expanded=False):
-        calculations = get_calculations(limit=10)
-        if calculations:
-            st.write(f"**{len(calculations)} derniers calculs:**")
-            for calc in calculations:
-                timestamp = calc["timestamp"][:19].replace("T", " ")
-                st.text(
-                    f"🔢 {calc['operand1']} + {calc['operand2']} = {calc['result']} | {timestamp}"
-                )
-        else:
-            st.info("Aucun calcul enregistré pour le moment.")
-
-    # Display greeting history
-    with st.expander("👋 Historique des salutations", expanded=False):
-        greetings = get_greetings(limit=10)
-        if greetings:
-            st.write(f"**{len(greetings)} dernières salutations:**")
-            for greeting in greetings:
-                timestamp = greeting["timestamp"][:19].replace("T", " ")
-                st.text(f"👤 {greeting['name']} | {timestamp}")
-        else:
-            st.info("Aucune salutation enregistrée pour le moment.")
-
-
-# Application entry point
-if __name__ == "__main__":
-    main()
+    with col2:
+        csv_costs = filtered_costs.to_csv(index=False)
+        st.download_button(
+            label="Download Cost Data (CSV)",
+            data=csv_costs,
+            file_name="cost_data.csv",
+            mime="text/csv",
+        )

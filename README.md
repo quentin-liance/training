@@ -1,73 +1,62 @@
-# Training Project
+# Company Margin Analyzer
 
-A Python project with development container, UV package manager, and CI/CD setup.
+A Streamlit application for analyzing company margins with detailed income and cost breakdowns.
 
-## Setup
+## Features
 
-### Using Dev Container (Recommended)
+- 📊 Interactive dashboard with key metrics
+- 💰 Detailed income analysis by category and month
+- 💸 Comprehensive cost breakdown
+- 📈 Visual charts and trends
+- 🔍 Filtering capabilities
+- 📥 Data export functionality
 
-1. Open the project in VS Code
-2. Install the "Dev Containers" extension
-3. Press `Ctrl+Shift+P` and select "Dev Containers: Reopen in Container"
-4. The container will build and set up automatically
+## Installation
 
-### Local Setup
+```bash
+pip install -e .
+```
 
-1. Install UV:
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
+## Running the App
 
-2. Create virtual environment and install dependencies:
-   ```bash
-   uv venv
-   source .venv/bin/activate  # On Linux/macOS
-   # or .venv\Scripts\activate on Windows
-   uv pip install -e '.[dev]'
-   ```
+```bash
+streamlit run src/app.py
+```
 
-3. Install pre-commit hooks:
-   ```bash
-   pre-commit install
-   ```
+The app will open in your default browser at `http://localhost:8501`
 
 ## Project Structure
 
 ```
-.
-├── .devcontainer/       # Development container configuration
-├── .github/            # GitHub Actions CI/CD
-├── src/                # Source code
-├── tests/              # Test files
-├── data/               # Data files (ignored by git)
-├── pyproject.toml      # Project configuration
-└── README.md           # This file
+├── src/
+│   ├── app.py                 # Main Streamlit application
+│   ├── data/
+│   │   └── generator.py       # Fake data generation
+│   └── utils/
+│       └── calculations.py    # Calculation utilities
+├── tests/
+│   └── test_calculations.py   # Unit tests
+├── .streamlit/
+│   └── config.toml           # Streamlit configuration
+├── pyproject.toml            # Project dependencies and configuration
+└── README.md                # This file
 ```
+
+## Data
+
+The application uses generated fake data for demonstration purposes. Data includes:
+- Monthly income across multiple categories
+- Monthly costs across various expense categories
+- Automatic calculation of margins and percentages
 
 ## Development
 
-### Running Tests
+Install with development dependencies:
+```bash
+pip install -e ".[dev]"
+```
 
+Run tests:
 ```bash
 pytest
 ```
-
-### Linting and Formatting
-
-```bash
-ruff check .
-ruff format .
-```
-
-### Type Checking
-
-```bash
-mypy src/
-```
-
-## CI/CD
-
-The project uses GitHub Actions for continuous integration. On each push:
-- Code is linted and formatted
-- Type checking is performed
-- Tests are run with coverage report

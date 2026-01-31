@@ -3,6 +3,18 @@
 # Import Streamlit library to create the web interface
 import streamlit as st
 
+# Import database functions for storing results
+from src.database import (
+    get_calculations,
+    get_greetings,
+    init_db,
+    save_calculation,
+    save_greeting,
+)
+
+# Initialize database on module load
+init_db()
+
 # ========================================
 # Utility Functions
 # ========================================
@@ -54,6 +66,10 @@ def main() -> None:
     if name:
         # Display the greeting message in green
         st.success(get_greeting(name))
+        # Save the greeting to the database
+        if st.session_state.get("last_greeting_name") != name:
+            save_greeting(name)
+            st.session_state["last_greeting_name"] = name
 
     # ========================================
     # Section 2: Calculator
@@ -75,6 +91,9 @@ def main() -> None:
         result = calculate_sum(num1, num2)
         # Display the result in a blue info box
         st.info(f"Résultat: {num1} + {num2} = {result}")
+        # Save the calculation to the database
+        save_calculation(num1, num2, result)
+        st.success("✅ Résultat enregistré dans la base de données")
 
     # ========================================
     # Section 3: Information
@@ -88,8 +107,38 @@ def main() -> None:
         - Interface utilisateur simple avec Streamlit
         - Fonctions testables
         - Structure modulaire
+        - Stockage des résultats en base de données SQLite
         """
         )
+
+    # ========================================
+    # Section 4: History
+    # ========================================
+    st.header("4. Historique")
+
+    # Display calculation history
+    with st.expander("📊 Historique des calculs", expanded=False):
+        calculations = get_calculations(limit=10)
+        if calculations:
+            st.write(f"**{len(calculations)} derniers calculs:**")
+            for calc in calculations:
+                timestamp = calc["timestamp"][:19].replace("T", " ")
+                st.text(
+                    f"🔢 {calc['operand1']} + {calc['operand2']} = {calc['result']} | {timestamp}"
+                )
+        else:
+            st.info("Aucun calcul enregistré pour le moment.")
+
+    # Display greeting history
+    with st.expander("👋 Historique des salutations", expanded=False):
+        greetings = get_greetings(limit=10)
+        if greetings:
+            st.write(f"**{len(greetings)} dernières salutations:**")
+            for greeting in greetings:
+                timestamp = greeting["timestamp"][:19].replace("T", " ")
+                st.text(f"👤 {greeting['name']} | {timestamp}")
+        else:
+            st.info("Aucune salutation enregistrée pour le moment.")
 
 
 # Application entry point

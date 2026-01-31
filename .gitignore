@@ -95,3 +95,4 @@ dmypy.json
 
 # ruff
 .ruff_cache/
+data/*.db

@@ -16,6 +16,7 @@ def add(a: int, b: int) -> int:
 
 def main() -> None:
     """Entry point for the application."""
+    # Test mypy configuration
     print("Hello from training project!")
     result = add(2, 3)
     print(f"2 + 3 = {result}")

@@ -89,6 +89,9 @@ cover/
 data/*
 !data/.gitkeep
 
+# CSV files
+*.csv
+
 # Logs
 *.log
 logs/

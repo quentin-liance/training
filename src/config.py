@@ -24,7 +24,7 @@ COLUMNS_MAPPING = {
 
 # Streamlit configuration
 PAGE_CONFIG = {
-    "page_title": "Operations Analysis",
+    "page_title": "Analyse des Opérations Bancaires",
     "page_icon": "💰",
     "layout": "wide",
     "initial_sidebar_state": "expanded",

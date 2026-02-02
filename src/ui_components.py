@@ -16,12 +16,12 @@ def display_sidebar_statistics(stats: dict) -> None:
         stats: Dictionary containing statistics (count, total, mean, min, max)
     """
     st.sidebar.markdown("---")
-    st.sidebar.subheader("📊 Statistics")
-    st.sidebar.metric("Number of operations", stats["count"])
-    st.sidebar.metric("Total expenses", f"{stats['total']:.0f} €")
-    st.sidebar.metric("Average expense", f"{stats['mean']:.0f} €")
-    st.sidebar.metric("Min expense", f"{stats['min']:.0f} €")
-    st.sidebar.metric("Max expense", f"{stats['max']:.0f} €")
+    st.sidebar.subheader("📊 Statistiques")
+    st.sidebar.metric("Nombre d'opérations", stats["count"])
+    st.sidebar.metric("Total des dépenses", f"{stats['total']:.0f} €")
+    st.sidebar.metric("Dépense moyenne", f"{stats['mean']:.0f} €")
+    st.sidebar.metric("Dépense min", f"{stats['min']:.0f} €")
+    st.sidebar.metric("Dépense max", f"{stats['max']:.0f} €")
 
 
 def create_stacked_bar_chart(cat_subcat: pd.DataFrame, totals_cat: pd.DataFrame) -> px.bar:
@@ -34,29 +34,101 @@ def create_stacked_bar_chart(cat_subcat: pd.DataFrame, totals_cat: pd.DataFrame)
     Returns:
         Plotly figure
     """
+    # Use a more pleasant color palette
+    color_sequence = [
+        "#FF6B6B",  # Red
+        "#4ECDC4",  # Teal
+        "#45B7D1",  # Blue
+        "#FFA07A",  # Light salmon
+        "#98D8C8",  # Mint
+        "#F7DC6F",  # Yellow
+        "#BB8FCE",  # Purple
+        "#85C1E2",  # Sky blue
+        "#F8B739",  # Orange
+        "#52BE80",  # Green
+    ]
+
     fig = px.bar(
         cat_subcat,
         x="CATEGORY",
         y="AMOUNT_ABS",
         color="SUBCATEGORY",
-        title="Distribution by Subcategory",
-        labels={"AMOUNT_ABS": "Amount (€)", "CATEGORY": "Category"},
+        title="<b>Répartition des Dépenses par Catégorie et Sous-catégorie</b>",
+        labels={
+            "AMOUNT_ABS": "Montant (€)",
+            "CATEGORY": "Catégorie",
+            "SUBCATEGORY": "Sous-catégorie",
+        },
         text_auto=True,
+        color_discrete_sequence=color_sequence,
     )
-    fig.update_traces(texttemplate="%{y:.0f} €", textposition="inside")
-    fig.update_layout(xaxis={"categoryorder": "total descending"}, height=500)
 
-    # Add totals on bars
+    # Update traces for better visuals
+    fig.update_traces(
+        texttemplate="%{y:.0f} €",
+        textposition="inside",
+        textfont={"size": 11, "color": "white", "family": "Arial"},
+        marker={"line": {"color": "white", "width": 1}},  # Add white borders
+        hovertemplate="<b>%{fullData.name}</b><br>Montant : %{y:.2f} €<extra></extra>",
+    )
+
+    # Enhanced layout
+    fig.update_layout(
+        xaxis={
+            "categoryorder": "total descending",
+            "title": {"text": "<b>Catégorie</b>", "font": {"size": 14}},
+            "tickfont": {"size": 12},
+            "showgrid": False,
+        },
+        yaxis={
+            "title": {"text": "<b>Montant (€)</b>", "font": {"size": 14}},
+            "tickfont": {"size": 11},
+            "showgrid": True,
+            "gridcolor": "rgba(128, 128, 128, 0.1)",
+            "gridwidth": 1,
+        },
+        height=550,
+        margin={"l": 70, "r": 50, "t": 80, "b": 70},
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        title={
+            "font": {"size": 18, "color": "#2C3E50", "family": "Arial"},
+            "x": 0.5,
+            "xanchor": "center",
+        },
+        legend={
+            "title": {"text": "<b>Sous-catégorie</b>", "font": {"size": 13}},
+            "font": {"size": 11},
+            "orientation": "v",
+            "yanchor": "top",
+            "y": 1,
+            "xanchor": "left",
+            "x": 1.02,
+            "bgcolor": "rgba(255, 255, 255, 0.8)",
+            "bordercolor": "#CCCCCC",
+            "borderwidth": 1,
+        },
+        hoverlabel={
+            "bgcolor": "white",
+            "font_size": 12,
+            "font_family": "Arial",
+        },
+    )
+
+    # Add totals on bars with improved styling
     for _, row in totals_cat.iterrows():
         fig.add_annotation(
             x=row["CATEGORY"],
             y=row["TOTAL"],
-            text=f"{row['TOTAL']:.0f} €",
+            text=f"<b>{row['TOTAL']:.0f} €</b>",
             showarrow=False,
-            yshift=30,
-            font={"size": 12, "color": "black", "family": "Arial Black"},
-            bgcolor="rgba(255, 255, 255, 0.8)",
-            borderpad=4,
+            yshift=35,
+            font={"size": 13, "color": "#2C3E50", "family": "Arial Black"},
+            bgcolor="rgba(255, 255, 255, 0.95)",
+            bordercolor="#2C3E50",
+            borderwidth=1.5,
+            borderpad=6,
+            opacity=0.95,
         )
 
     return fig
@@ -71,9 +143,9 @@ def create_aggrid_table(summary: pd.DataFrame) -> None:
     logger.debug(f"Creating AG Grid table with {len(summary)} rows")
     gb_summary = GridOptionsBuilder.from_dataframe(summary)
     gb_summary.configure_default_column(filterable=True, sortable=True, resizable=True)
-    gb_summary.configure_column("CATEGORY", header_name="Category", pinned="left", width=150)
-    gb_summary.configure_column("SUBCATEGORY", header_name="Subcategory", width=150)
-    gb_summary.configure_column("OPERATION_LABEL", header_name="Label", width=250)
+    gb_summary.configure_column("CATEGORY", header_name="Catégorie", pinned="left", width=150)
+    gb_summary.configure_column("SUBCATEGORY", header_name="Sous-catégorie", width=150)
+    gb_summary.configure_column("OPERATION_LABEL", header_name="Libellé", width=250)
     gb_summary.configure_column(
         "Total (€)", width=120, type=["numericColumn"], valueFormatter="value.toFixed(0) + ' €'"
     )

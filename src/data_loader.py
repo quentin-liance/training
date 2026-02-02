@@ -14,16 +14,25 @@ from src.config import (
 
 
 @st.cache_data
-def load_data() -> pd.DataFrame:
+def load_data(uploaded_file=None) -> pd.DataFrame:
     """Load and process bank operations data.
+
+    Args:
+        uploaded_file: Streamlit UploadedFile object or None to use default file
 
     Returns:
         DataFrame with normalized and aggregated columns
     """
-    logger.info(f"Loading data from {OPERATIONS_FILE}")
+    if uploaded_file is not None:
+        logger.info(f"Loading data from uploaded file: {uploaded_file.name}")
+        file_to_read = uploaded_file
+    else:
+        logger.info(f"Loading data from {OPERATIONS_FILE}")
+        file_to_read = OPERATIONS_FILE
+
     df = (
         pd.read_csv(
-            OPERATIONS_FILE,
+            file_to_read,
             sep=SEPARATOR,
             decimal=DECIMAL,
             encoding=ENCODING,

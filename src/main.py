@@ -1,5 +1,6 @@
 """Streamlit application for bank operations analysis."""
 
+import pandas as pd
 import streamlit as st
 
 from src.config import DEFAULT_QUANTILE_THRESHOLD, PAGE_CONFIG
@@ -27,23 +28,71 @@ def main() -> None:
     st.set_page_config(**PAGE_CONFIG)
 
     # Main title
-    st.title("💰 Bank Operations Analysis")
+    st.title("💰 Analyse des Opérations Bancaires")
     st.markdown("---")
 
+    # File upload section
+    uploaded_file = st.file_uploader(
+        "📁 Importer un fichier CSV d'opérations bancaires",
+        type=["csv"],
+        help="Sélectionnez un fichier CSV contenant vos opérations bancaires",
+    )
+
     # Load data
-    df = load_data()
+    df = load_data(uploaded_file)
     logger.debug(f"Data shape: {df.shape}")
 
+    # Convert OPERATION_DATE to datetime (format DD/MM/YYYY in CSV)
+    df["OPERATION_DATE"] = pd.to_datetime(df["OPERATION_DATE"], format="%d/%m/%Y", errors="coerce")
+
+    # Remove rows with invalid dates
+    df = df.dropna(subset=["OPERATION_DATE"])
+
+    # Check if we have valid dates
+    if len(df) == 0:
+        st.error("Aucune donnée avec des dates valides trouvée.")
+        return
+
     # Sidebar - Filters
-    st.sidebar.header("⚙️ Settings")
+    st.sidebar.header("⚙️ Paramètres")
+
+    # Date filters
+    st.sidebar.subheader("📅 Filtres de Date")
+    min_date = df["OPERATION_DATE"].min().date()
+    max_date = df["OPERATION_DATE"].max().date()
+
+    date_start = st.sidebar.date_input(
+        "Date de début",
+        value=min_date,
+        min_value=min_date,
+        max_value=max_date,
+        help="Sélectionnez la date de début de la période",
+    )
+
+    date_end = st.sidebar.date_input(
+        "Date de fin",
+        value=max_date,
+        min_value=min_date,
+        max_value=max_date,
+        help="Sélectionnez la date de fin de la période",
+    )
+
+    # Apply date filter
+    df = df[
+        (df["OPERATION_DATE"].dt.date >= date_start) & (df["OPERATION_DATE"].dt.date <= date_end)
+    ]
+    logger.info(f"Date filter applied: {date_start} to {date_end} ({len(df)} operations)")
+
+    st.sidebar.markdown("---")
+
     quantile_threshold = (
         st.sidebar.slider(
-            "Extreme values exclusion threshold (%)",
+            "Seuil d'exclusion des valeurs extrêmes (%)",
             min_value=0,
             max_value=20,
             value=DEFAULT_QUANTILE_THRESHOLD,
             step=1,
-            help="Percentage of highest expenses to exclude",
+            help="Pourcentage des dépenses les plus élevées à exclure",
         )
         / 100
     )
@@ -57,19 +106,44 @@ def main() -> None:
     display_sidebar_statistics(stats)
 
     # Main section - Analysis by subcategory
-    st.subheader("Analysis by Subcategory")
+    st.subheader("Analyse par Sous-catégorie")
 
-    # Category selection
+    # Category multi-selection
     categories = sorted(df_negative["CATEGORY"].unique())
-    selected_cat = st.selectbox("Choose a category", ["All"] + categories)
+    selected_categories = st.multiselect(
+        "Filtrer par catégories (laisser vide pour toutes)",
+        options=categories,
+        default=[],
+        help="Sélectionnez une ou plusieurs catégories à afficher",
+    )
 
-    # Filter by selected category
-    if selected_cat == "All":
+    # Filter by selected categories
+    if selected_categories:
+        df_filtered = df_negative[df_negative["CATEGORY"].isin(selected_categories)]
+        logger.info(
+            f"Category filter applied: {len(selected_categories)} categories selected "
+            f"({len(df_filtered)} operations)"
+        )
+    else:
         df_filtered = df_negative
         logger.info("Displaying all categories")
-    else:
-        df_filtered = df_negative[df_negative["CATEGORY"] == selected_cat]
-        logger.info(f"Category filter applied: {selected_cat} ({len(df_filtered)} operations)")
+
+    # Subcategory multi-selection
+    available_subcategories = sorted(df_filtered["SUBCATEGORY"].unique())
+    selected_subcategories = st.multiselect(
+        "Filtrer par sous-catégories (laisser vide pour toutes)",
+        options=available_subcategories,
+        default=[],
+        help="Sélectionnez une ou plusieurs sous-catégories à afficher",
+    )
+
+    # Apply subcategory filter if any selected
+    if selected_subcategories:
+        df_filtered = df_filtered[df_filtered["SUBCATEGORY"].isin(selected_subcategories)]
+        logger.info(
+            f"Subcategory filter applied: {len(selected_subcategories)} subcategories "
+            f"selected ({len(df_filtered)} operations)"
+        )
 
     # Prepare data for chart
     cat_subcat = prepare_chart_data(df_filtered)
@@ -77,16 +151,18 @@ def main() -> None:
 
     # Display stacked bar chart
     fig_stacked = create_stacked_bar_chart(cat_subcat, totals_cat)
-    st.plotly_chart(fig_stacked, use_container_width=True)
+    st.plotly_chart(fig_stacked, width="stretch")
 
     # Summary table
-    st.subheader("Summary Table")
+    st.subheader("Tableau Récapitulatif")
     summary = prepare_summary_table(df_filtered, df_negative)
     create_aggrid_table(summary)
 
     # Footer
     st.markdown("---")
-    st.markdown("💡 **Tip**: Use the filters in the sidebar to explore your data!")
+    st.markdown(
+        "💡 **Astuce**: Utilisez les filtres de la barre latérale pour explorer " "vos données !"
+    )
 
 
 if __name__ == "__main__":

@@ -2,31 +2,26 @@
 # Project Metadata
 # ========================================
 [project]
-name = "training"  # Project name
-version = "0.1.0"  # Current version following semantic versioning
-description = "Training project"  # Short project description
+name = "bank-operations-analyzer"  # Project name
+version = "0.2.0"  # Current version following semantic versioning
+description = "Modular Streamlit app for bank operations analysis with AG Grid"  # Short project description
 readme = "README.md"  # Path to README file
 requires-python = ">=3.11"  # Minimum Python version required
 # Core dependencies for the application
 dependencies = [
-    "streamlit>=1.30.0",  # Web framework for creating data apps
-    "pandas>=2.2.0",      # Data manipulation and analysis
-    "numpy>=1.26.3",      # Numerical computing
-    "plotly>=5.18.0",     # Interactive visualization library
-    "loguru>=0.7.0",      # Modern logging with better ergonomics
+    "streamlit>=1.30.0",    # Web framework for creating data apps
+    "pandas>=2.2.0",        # Data manipulation and analysis
+    "plotly>=5.18.0",       # Interactive visualization library
+    "streamlit-aggrid>=0.3.4",  # AG Grid component for Streamlit
+    "loguru>=0.7.0",        # Modern logging library
 ]
 
 # Optional dependencies for development environment
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.4.0",       # Testing framework
-    "pytest-cov>=4.1.0",   # Code coverage plugin for pytest
     "ruff>=0.1.15",        # Fast Python linter and formatter
-    "mypy>=1.8.0",         # Static type checker
     "pre-commit>=3.6.0",   # Git hooks manager for code quality
     "ipython>=8.20.0",     # Enhanced Python interactive shell
-    "ipykernel>=6.29.0",   # Jupyter kernel for notebooks
-    "nbstripout>=0.7.0",   # Strip output from Jupyter notebooks
 ]
 
 # ========================================
@@ -57,67 +52,9 @@ select = [
     "C4",  # flake8-comprehensions
     "UP",  # pyupgrade
     "N",   # pep8-naming
-    "S",   # flake8-bandit (sécurité)
     "PTH", # flake8-use-pathlib
 ]
-ignore = [
-    "S101", # Allow assert in tests
-]
+ignore = []
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-
-# ========================================
-# Mypy Type Checker Configuration
-# ========================================
-[[tool.mypy.overrides]]
-module = ["plotly.*", "streamlit.*", "pandas.*", "numpy.*"]
-ignore_missing_imports = true
-
-[tool.mypy]
-python_version = "3.11"  # Python version for type checking
-warn_return_any = true  # Warn when returning Any from typed function
-warn_unused_configs = true  # Warn about unused mypy configuration options
-warn_redundant_casts = true  # Warn about unnecessary type casts
-warn_unused_ignores = true  # Warn about unused '# type: ignore' comments
-strict_equality = true  # Enforce strict equality checks
-check_untyped_defs = true  # Check function bodies even without type annotations
-disallow_untyped_defs = false  # Progressive: enable later for stricter typing
-exclude = ["tests/"]  # Directories to exclude from type checking
-namespace_packages = true  # Enable namespace packages
-explicit_package_bases = true  # Use explicit package bases
-
-# ========================================
-# Pytest Configuration
-# ========================================
-[tool.pytest.ini_options]
-testpaths = ["tests"]  # Directory containing test files
-python_files = ["test_*.py"]  # Pattern for test file names
-python_classes = ["Test*"]  # Pattern for test class names
-python_functions = ["test_*"]  # Pattern for test function names
-# Additional options: verbose, strict markers, short traceback, show missing coverage
-addopts = "-v --strict-markers --tb=short --cov-report=term-missing"
-# Custom test markers for categorizing tests
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-]
-
-# ========================================
-# Coverage Configuration
-# ========================================
-[tool.coverage.run]
-source = ["src"]  # Measure coverage for source code in src directory
-omit = ["tests/*", "**/__init__.py"]  # Exclude test files and __init__.py from coverage
-
-# Configure coverage report output
-[tool.coverage.report]
-# Lines to exclude from coverage analysis
-exclude_lines = [
-    "pragma: no cover",  # Explicit coverage exclusion marker
-    "def __repr__",  # String representation methods
-    "raise AssertionError",  # Assertion errors
-    "raise NotImplementedError",  # Abstract method placeholders
-    "if __name__ == .__main__.:",  # Script entry point
-    "if TYPE_CHECKING:",  # Type checking imports
-]

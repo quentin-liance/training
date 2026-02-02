@@ -8,26 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- **Upgraded logging system to Loguru** for better developer experience
-  - Automatic colorization in console
-  - Structured log format with module, function, and line information
-  - File rotation (500 MB) and retention (10 days) with automatic compression
-  - Separate log levels for console (INFO) and file (DEBUG)
-  - Logs saved to `logs/` directory with daily rotation
-- Replaced Python's standard `logging` module with `loguru` throughout the application
-- Added `loguru>=0.7.0` to project dependencies
-
-### Added
-- MIT License
-- Comprehensive logging system throughout the application
-- Logger in `calculations.py` with INFO and DEBUG levels
-- Logger in `app.py` with file and console handlers
-- CHANGELOG.md following Keep a Changelog format
-- `logs/` directory in `.gitignore`
-
-### Changed
-- Replaced deprecated `use_container_width=True` with `width='stretch'` in all Streamlit components
-- Updated Streamlit config to disable CORS/XSRF warnings and usage stats
+- **Refactorisation complète selon les best practices**
+  - Architecture modulaire avec séparation stricte des responsabilités
+  - Tout le code source dans `src/` (clean architecture)
+  - Entrypoint minimal `app.py` à la racine (convention Streamlit)
+  - Application principale dans `src/main.py`
+  - Code source organisé en modules dédiés :
+    - `config.py` : Configuration centralisée et constantes
+    - `data_loader.py` : Chargement et traitement des données
+    - `ui_components.py` : Composants d'interface réutilisables
+    - `main.py` : Orchestration de l'application
+  - Données déplacées dans dossier `data/` dédié
+  - Documentation complète avec docstrings et type hints
+  - Respect strict des conventions Python (PEP 8)
+  - Mise à jour de tous les fichiers de configuration
 
 ## [0.1.0] - 2026-01-31
 

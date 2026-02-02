@@ -9,4 +9,4 @@
 source .venv/bin/activate
 
 # Run the Streamlit app with the main application file
-streamlit run src/app.py
+streamlit run app.py

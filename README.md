@@ -1,15 +1,15 @@
-# Company Margin Analyzer
+# Analyse des Opérations Bancaires
 
-A Streamlit application for analyzing company margins with detailed income and cost breakdowns.
+Application Streamlit pour l'analyse des opérations bancaires avec visualisation interactive via AG Grid.
 
-## Features
+## Fonctionnalités
 
-- 📊 Interactive dashboard with key metrics
-- 💰 Detailed income analysis by category and month
-- 💸 Comprehensive cost breakdown
-- 📈 Visual charts and trends
-- 🔍 Filtering capabilities
-- 📥 Data export functionality
+- 📊 Tableau interactif des opérations avec AG Grid
+- 💰 Analyse des dépenses par catégorie
+- 📈 Graphiques et visualisations avec Plotly
+- 🔍 Filtres personnalisables
+- 📉 Exclusion des valeurs extrêmes (configurable)
+- 💡 Statistiques en temps réel
 
 ## Installation
 
@@ -17,46 +17,56 @@ A Streamlit application for analyzing company margins with detailed income and c
 pip install -e .
 ```
 
-## Running the App
+## Lancement de l'application
 
 ```bash
-streamlit run src/app.py
+streamlit run app.py
 ```
 
-The app will open in your default browser at `http://localhost:8501`
-
-## Project Structure
-
-```
-├── src/
-│   ├── app.py                 # Main Streamlit application
-│   ├── data/
-│   │   └── generator.py       # Fake data generation
-│   └── utils/
-│       └── calculations.py    # Calculation utilities
-├── tests/
-│   └── test_calculations.py   # Unit tests
-├── .streamlit/
-│   └── config.toml           # Streamlit configuration
-├── pyproject.toml            # Project dependencies and configuration
-└── README.md                # This file
+Ou utilisez le script fourni :
+```bash
+./run_app.sh
 ```
 
-## Data
+L'application s'ouvrira dans votre navigateur à l'adresse `http://localhost:8501`
 
-The application uses generated fake data for demonstration purposes. Data includes:
-- Monthly income across multiple categories
-- Monthly costs across various expense categories
-- Automatic calculation of margins and percentages
+## Structure du projet
 
-## Development
+```
+├── app.py                        # Entrypoint (lance src/main.py)
+├── src/                          # Code source modulaire
+│   ├── __init__.py                # Package initialization
+│   ├── main.py                    # Application Streamlit principale
+│   ├── config.py                  # Configuration et constantes
+│   ├── data_loader.py             # Chargement et traitement des données
+│   └── ui_components.py           # Composants d'interface utilisateur
+├── data/                         # Données
+│   └── 20260101_20260201_operations.csv
+├── run_app.sh                    # Script de lancement
+├── pyproject.toml                # Configuration et dépendances
+└── README.md                     # Ce fichier
+```
 
-Install with development dependencies:
+## Données
+
+L'application analyse les données d'opérations bancaires à partir d'un fichier CSV contenant :
+- Catégories et sous-catégories d'opérations
+- Libellés détaillés
+- Montants (débits et crédits)
+- Dates d'opération
+
+## Développement
+
+Installation avec les dépendances de développement :
 ```bash
 pip install -e ".[dev]"
 ```
 
-Run tests:
-```bash
-pytest
-```
+### Architecture
+
+Le projet suit une architecture modulaire stricte :
+- **app.py** : Entrypoint minimal (convention pour Streamlit)
+- **src/main.py** : Point d'entrée de l'application Streamlit
+- **src/config.py** : Configuration centralisée (chemins, paramètres)
+- **src/data_loader.py** : Fonctions de chargement et transformation des données
+- **src/ui_components.py** : Composants réutilisables de l'interface

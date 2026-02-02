@@ -28,5 +28,6 @@
     }
   },
   "postCreateCommand": "bash -c 'if [ ! -d .git ]; then git init && git add . && git commit -m \"Initial commit\" || true; fi && uv venv --clear && source .venv/bin/activate && uv pip install -e \".[dev]\" && pre-commit install'",
+  "postStartCommand": "echo 'source /workspace/.venv/bin/activate' >> ~/.zshrc",
   "remoteUser": "root"
 }

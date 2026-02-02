@@ -12,6 +12,23 @@ SEPARATOR = ";"
 DECIMAL = ","
 ENCODING = "utf-8"
 
+# Required CSV columns (schema validation)
+REQUIRED_CSV_COLUMNS = [
+    "Date de comptabilisation",
+    "Libelle simplifie",
+    "Libelle operation",
+    "Reference",
+    "Informations complementaires",
+    "Type operation",
+    "Categorie",
+    "Sous categorie",
+    "Debit",
+    "Credit",
+    "Date operation",
+    "Date de valeur",
+    "Pointage operation",
+]
+
 # Column mapping
 COLUMNS_MAPPING = {
     "Categorie": "CATEGORY",

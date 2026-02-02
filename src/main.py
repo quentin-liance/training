@@ -11,6 +11,7 @@ from src.data_loader import (
     load_data,
     prepare_chart_data,
     prepare_summary_table,
+    validate_csv_schema,
 )
 from src.logger import logger  # Initialize logger configuration
 from src.ui_components import (
@@ -37,6 +38,18 @@ def main() -> None:
         type=["csv"],
         help="Sélectionnez un fichier CSV contenant vos opérations bancaires",
     )
+
+    # Validate schema if file is uploaded
+    if uploaded_file is not None:
+        is_valid, error_message = validate_csv_schema(uploaded_file)
+        if not is_valid:
+            st.error(
+                f"⚠️ **Le fichier uploadé ne correspond pas au schéma attendu.**\\n\\n"
+                f"{error_message}\\n\\n"
+                f"Veuillez utiliser un fichier avec la même structure que le fichier de référence."
+            )
+            logger.error(f"Schema validation failed for {uploaded_file.name}")
+            return
 
     # Load data with error handling
     try:

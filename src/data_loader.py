@@ -9,8 +9,57 @@ from src.config import (
     DECIMAL,
     ENCODING,
     OPERATIONS_FILE,
+    REQUIRED_CSV_COLUMNS,
     SEPARATOR,
 )
+
+
+def validate_csv_schema(uploaded_file) -> tuple[bool, str]:
+    """Validate that uploaded CSV has the expected schema.
+
+    Args:
+        uploaded_file: Streamlit UploadedFile object
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    try:
+        # Read only the header to check columns
+        df_header = pd.read_csv(
+            uploaded_file,
+            sep=SEPARATOR,
+            encoding=ENCODING,
+            nrows=0,  # Only read header
+        )
+        uploaded_file.seek(0)  # Reset file pointer for later reading
+
+        uploaded_columns = list(df_header.columns)
+        expected_columns = REQUIRED_CSV_COLUMNS
+
+        # Check if columns match exactly
+        if uploaded_columns != expected_columns:
+            missing = set(expected_columns) - set(uploaded_columns)
+            extra = set(uploaded_columns) - set(expected_columns)
+
+            error_parts = []
+            if missing:
+                error_parts.append(f"Colonnes manquantes : {', '.join(sorted(missing))}")
+            if extra:
+                error_parts.append(f"Colonnes supplémentaires : {', '.join(sorted(extra))}")
+            if set(uploaded_columns) == set(expected_columns):
+                error_parts.append("L'ordre des colonnes ne correspond pas au schéma attendu")
+
+            error_message = " | ".join(error_parts)
+            logger.error(f"Schema validation failed: {error_message}")
+            return False, error_message
+
+        logger.info("CSV schema validation successful")
+        return True, ""
+
+    except Exception as e:
+        error_message = f"Erreur lors de la validation : {str(e)}"
+        logger.error(error_message)
+        return False, error_message
 
 
 @st.cache_data

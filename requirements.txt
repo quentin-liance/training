@@ -1,6 +1,7 @@
 # Core dependencies for production deployment
-streamlit>=1.30.0
-pandas>=2.2.0
-plotly>=5.18.0
-streamlit-aggrid>=0.3.4
-loguru>=0.7.0
+# Versions locked for reproducibility
+streamlit==1.53.1
+pandas==2.3.3
+plotly==6.5.2
+streamlit-aggrid==0.3.4.post3
+loguru==0.7.3

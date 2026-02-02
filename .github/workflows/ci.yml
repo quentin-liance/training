@@ -9,9 +9,9 @@ name: CI
 # Trigger conditions for the workflow
 on:
   push:
-    branches: [main, develop]  # Run on pushes to these branches
+    branches: [master, main, develop]  # Run on pushes to these branches
   pull_request:
-    branches: [main, develop]  # Run on pull requests to these branches
+    branches: [master, main, develop]  # Run on pull requests to these branches
 
 jobs:
   test:

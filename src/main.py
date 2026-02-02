@@ -38,12 +38,37 @@ def main() -> None:
         help="Sélectionnez un fichier CSV contenant vos opérations bancaires",
     )
 
-    # Load data
-    df = load_data(uploaded_file)
-    logger.debug(f"Data shape: {df.shape}")
+    # Load data with error handling
+    try:
+        df = load_data(uploaded_file)
+        logger.debug(f"Data shape: {df.shape}")
+    except FileNotFoundError:
+        st.error(
+            "⚠️ Le fichier de données par défaut est introuvable. "
+            "Veuillez uploader un fichier CSV."
+        )
+        logger.error("Default data file not found")
+        return
+    except pd.errors.EmptyDataError:
+        st.error("⚠️ Le fichier CSV est vide. Veuillez vérifier vos données.")
+        logger.error("Empty CSV file provided")
+        return
+    except Exception as e:
+        st.error(f"⚠️ Erreur lors du chargement des données : {str(e)}")
+        logger.exception("Error loading data")
+        return
 
     # Convert OPERATION_DATE to datetime (format DD/MM/YYYY in CSV)
-    df["OPERATION_DATE"] = pd.to_datetime(df["OPERATION_DATE"], format="%d/%m/%Y", errors="coerce")
+    try:
+        df["OPERATION_DATE"] = pd.to_datetime(
+            df["OPERATION_DATE"], format="%d/%m/%Y", errors="coerce"
+        )
+    except Exception as e:
+        st.warning(
+            f"⚠️ Problème lors de la conversion des dates : {str(e)}. "
+            "Certaines dates peuvent être invalides."
+        )
+        logger.warning(f"Date conversion issue: {e}")
 
     # Remove rows with invalid dates
     df = df.dropna(subset=["OPERATION_DATE"])
@@ -161,7 +186,7 @@ def main() -> None:
     # Footer
     st.markdown("---")
     st.markdown(
-        "💡 **Astuce**: Utilisez les filtres de la barre latérale pour explorer " "vos données !"
+        "💡 **Astuce**: Utilisez les filtres de la barre latérale pour explorer vos données !"
     )
 
 

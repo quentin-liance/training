@@ -44,8 +44,7 @@ def main() -> None:
         logger.debug(f"Data shape: {df.shape}")
     except FileNotFoundError:
         st.error(
-            "⚠️ Le fichier de données par défaut est introuvable. "
-            "Veuillez uploader un fichier CSV."
+            "⚠️ Le fichier de données par défaut est introuvable. Veuillez uploader un fichier CSV."
         )
         logger.error("Default data file not found")
         return

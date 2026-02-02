@@ -19,6 +19,8 @@ dependencies = [
 # Optional dependencies for development environment
 [project.optional-dependencies]
 dev = [
+    "pytest>=7.4.0",       # Testing framework
+    "pytest-cov>=4.1.0",   # Code coverage plugin for pytest
     "ruff>=0.1.15",        # Fast Python linter and formatter
     "pre-commit>=3.6.0",   # Git hooks manager for code quality
     "ipython>=8.20.0",     # Enhanced Python interactive shell
@@ -58,3 +60,34 @@ ignore = []
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
+
+# ========================================
+# Pytest Configuration
+# ========================================
+[tool.pytest.ini_options]
+testpaths = ["tests"]  # Directory containing test files
+python_files = ["test_*.py"]  # Pattern for test file names
+python_classes = ["Test*"]  # Pattern for test class names
+python_functions = ["test_*"]  # Pattern for test function names
+addopts = "-v --strict-markers --tb=short --cov=src --cov-report=term-missing --cov-report=html"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+]
+
+# ========================================
+# Coverage Configuration
+# ========================================
+[tool.coverage.run]
+source = ["src"]  # Measure coverage for source code in src directory
+omit = ["tests/*", "**/__init__.py"]  # Exclude test files and __init__.py from coverage
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

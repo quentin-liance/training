@@ -50,4 +50,4 @@ PAGE_CONFIG: dict[str, Any] = {
 
 # Default parameters
 DEFAULT_QUANTILE_THRESHOLD = 10  # Percentage
-PAGINATION_PAGE_SIZE = 25
+PAGINATION_PAGE_SIZE = 50  # Augmenté pour meilleure UX

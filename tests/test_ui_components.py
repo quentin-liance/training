@@ -230,7 +230,7 @@ class TestCreateAggridTable:
         call_args = mock_aggrid.call_args
         assert call_args[0][0].equals(sample_summary_data)  # DataFrame argument
         assert call_args[1]["theme"] == "streamlit"
-        assert call_args[1]["height"] == 500
+        assert call_args[1]["height"] == 600
 
     @patch("src.ui_components.logger")
     @patch("src.ui_components.AgGrid")
@@ -281,8 +281,9 @@ class TestCreateAggridTable:
 
         # Verify pagination configuration
         mock_builder_instance.configure_pagination.assert_called_once_with(
+            enabled=True,
             paginationAutoPageSize=False,
-            paginationPageSize=25,  # PAGINATION_PAGE_SIZE
+            paginationPageSize=50,  # PAGINATION_PAGE_SIZE mis à jour
         )
 
         # Verify sidebar is configured

@@ -185,18 +185,26 @@ def create_aggrid_table(summary: pd.DataFrame) -> None:
         type=["numericColumn"],
         valueFormatter="value.toFixed(0) + ' %'",
     )
+    # Configuration de pagination robuste pour la production
     gb_summary.configure_pagination(
-        paginationAutoPageSize=False, paginationPageSize=PAGINATION_PAGE_SIZE
+        enabled=True, paginationAutoPageSize=False, paginationPageSize=PAGINATION_PAGE_SIZE
     )
     gb_summary.configure_side_bar()
 
+    # Options de grille avec pagination explicite
     grid_options = gb_summary.build()
+    grid_options["pagination"] = True
+    grid_options["paginationPageSize"] = PAGINATION_PAGE_SIZE
+    grid_options["paginationNumberFormatter"] = None
+    grid_options["suppressPaginationPanel"] = False
 
     AgGrid(
         summary,
         gridOptions=grid_options,
         fit_columns_on_grid_load=False,
         theme="streamlit",
-        height=500,
+        height=600,  # Hauteur augmentée pour mieux voir la pagination
         allow_unsafe_jscode=True,
+        reload_data=False,
+        update_mode="NO_UPDATE",
     )

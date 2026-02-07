@@ -67,7 +67,7 @@ def create_stacked_bar_chart(cat_subcat: pd.DataFrame, totals_cat: pd.DataFrame)
     fig.update_traces(
         texttemplate="%{y:.0f} €",
         textposition="inside",
-        textfont={"size": 11, "color": "white", "family": "Arial"},
+        textfont={"size": 14, "color": "white", "family": "Arial"},
         marker={"line": {"color": "white", "width": 1}},  # Add white borders
         hovertemplate="<b>%{fullData.name}</b><br>Montant : %{y:.2f} €<extra></extra>",
     )
@@ -76,13 +76,13 @@ def create_stacked_bar_chart(cat_subcat: pd.DataFrame, totals_cat: pd.DataFrame)
     fig.update_layout(
         xaxis={
             "categoryorder": "total descending",
-            "title": {"text": "<b>Catégorie</b>", "font": {"size": 14}},
-            "tickfont": {"size": 12},
+            "title": {"text": "<b>Catégorie</b>", "font": {"size": 18}},
+            "tickfont": {"size": 16},
             "showgrid": False,
         },
         yaxis={
-            "title": {"text": "<b>Montant (€)</b>", "font": {"size": 14}},
-            "tickfont": {"size": 11},
+            "title": {"text": "<b>Montant (€)</b>", "font": {"size": 18}},
+            "tickfont": {"size": 15},
             "showgrid": True,
             "gridcolor": "rgba(128, 128, 128, 0.1)",
             "gridwidth": 1,
@@ -92,13 +92,13 @@ def create_stacked_bar_chart(cat_subcat: pd.DataFrame, totals_cat: pd.DataFrame)
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         title={
-            "font": {"size": 18, "color": "#2C3E50", "family": "Arial"},
+            "font": {"size": 22, "color": "#2C3E50", "family": "Arial"},
             "x": 0.5,
             "xanchor": "center",
         },
         legend={
-            "title": {"text": "<b>Sous-catégorie</b>", "font": {"size": 13}},
-            "font": {"size": 11},
+            "title": {"text": "<b>Sous-catégorie</b>", "font": {"size": 16}},
+            "font": {"size": 14},
             "orientation": "v",
             "yanchor": "top",
             "y": 1,
@@ -110,7 +110,7 @@ def create_stacked_bar_chart(cat_subcat: pd.DataFrame, totals_cat: pd.DataFrame)
         },
         hoverlabel={
             "bgcolor": "white",
-            "font_size": 12,
+            "font_size": 14,
             "font_family": "Arial",
         },
     )
@@ -123,7 +123,7 @@ def create_stacked_bar_chart(cat_subcat: pd.DataFrame, totals_cat: pd.DataFrame)
             text=f"<b>{row['TOTAL']:.0f} €</b>",
             showarrow=False,
             yshift=35,
-            font={"size": 13, "color": "#2C3E50", "family": "Arial Black"},
+            font={"size": 16, "color": "#2C3E50", "family": "Arial Black"},
             bgcolor="rgba(255, 255, 255, 0.95)",
             bordercolor="#2C3E50",
             borderwidth=1.5,

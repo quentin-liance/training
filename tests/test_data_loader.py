@@ -1,14 +1,351 @@
 """Unit tests for data_loader module."""
 
+from unittest.mock import Mock, patch
+
 import pandas as pd
 
 from src.data_loader import (
     calculate_category_totals,
     calculate_statistics,
     filter_expenses,
+    load_data,
     prepare_chart_data,
     prepare_summary_table,
+    validate_csv_schema,
 )
+
+
+class TestValidateCsvSchema:
+    """Tests for validate_csv_schema function."""
+
+    def test_valid_schema_success(self, mock_csv_content):
+        """Test validation with correct CSV schema."""
+        # Create a mock uploaded file
+        mock_file = Mock()
+
+        with (
+            patch("pandas.read_csv") as mock_read_csv,
+            patch("src.data_loader.logger") as mock_logger,
+        ):
+            # Mock pandas read_csv to return expected columns
+            mock_df = pd.DataFrame(
+                columns=[
+                    "Date de comptabilisation",
+                    "Libelle simplifie",
+                    "Libelle operation",
+                    "Reference",
+                    "Informations complementaires",
+                    "Type operation",
+                    "Categorie",
+                    "Sous categorie",
+                    "Debit",
+                    "Credit",
+                    "Date operation",
+                    "Date de valeur",
+                    "Pointage operation",
+                ]
+            )
+            mock_read_csv.return_value = mock_df
+
+            # Execute
+            is_valid, error_message = validate_csv_schema(mock_file)
+
+            # Verify
+            assert is_valid is True
+            assert error_message == ""
+            mock_file.seek.assert_called_once_with(0)
+            mock_logger.info.assert_called_once_with("CSV schema validation successful")
+
+    def test_missing_columns_error(self):
+        """Test validation with missing required columns."""
+        mock_file = Mock()
+
+        with (
+            patch("pandas.read_csv") as mock_read_csv,
+            patch("src.data_loader.logger") as mock_logger,
+        ):
+            # Mock DataFrame with missing columns
+            mock_df = pd.DataFrame(columns=["Date", "Amount", "Description"])
+            mock_read_csv.return_value = mock_df
+
+            # Execute
+            is_valid, error_message = validate_csv_schema(mock_file)
+
+            # Verify
+            assert is_valid is False
+            assert "Colonnes manquantes" in error_message
+            assert "Date de comptabilisation" in error_message
+            mock_logger.error.assert_called_once()
+
+    def test_extra_columns_error(self):
+        """Test validation with extra columns."""
+        mock_file = Mock()
+
+        with (
+            patch("pandas.read_csv") as mock_read_csv,
+            patch("src.data_loader.logger") as mock_logger,
+        ):
+            # Mock DataFrame with all required columns plus extra ones
+            required_columns = [
+                "Date de comptabilisation",
+                "Libelle simplifie",
+                "Libelle operation",
+                "Reference",
+                "Informations complementaires",
+                "Type operation",
+                "Categorie",
+                "Sous categorie",
+                "Debit",
+                "Credit",
+                "Date operation",
+                "Date de valeur",
+                "Pointage operation",
+            ]
+            extra_columns = required_columns + ["Extra1", "Extra2"]
+            mock_df = pd.DataFrame(columns=extra_columns)
+            mock_read_csv.return_value = mock_df
+
+            # Execute
+            is_valid, error_message = validate_csv_schema(mock_file)
+
+            # Verify
+            assert is_valid is False
+            assert "Colonnes supplémentaires" in error_message
+            assert "Extra1" in error_message
+            mock_logger.error.assert_called_once()
+
+    def test_wrong_column_order_error(self):
+        """Test validation with wrong column order."""
+        mock_file = Mock()
+
+        with (
+            patch("pandas.read_csv") as mock_read_csv,
+            patch("src.data_loader.logger") as mock_logger,
+        ):
+            # Mock DataFrame with correct columns but wrong order
+            required_columns = [
+                "Date de comptabilisation",
+                "Libelle simplifie",
+                "Libelle operation",
+                "Reference",
+                "Informations complementaires",
+                "Type operation",
+                "Categorie",
+                "Sous categorie",
+                "Debit",
+                "Credit",
+                "Date operation",
+                "Date de valeur",
+                "Pointage operation",
+            ]
+            reordered_columns = required_columns[::-1]  # Reverse order
+            mock_df = pd.DataFrame(columns=reordered_columns)
+            mock_read_csv.return_value = mock_df
+
+            # Execute
+            is_valid, error_message = validate_csv_schema(mock_file)
+
+            # Verify
+            assert is_valid is False
+            assert "L'ordre des colonnes ne correspond pas au schéma attendu" in error_message
+            mock_logger.error.assert_called_once()
+
+    def test_exception_handling(self):
+        """Test validation with read exception."""
+        mock_file = Mock()
+
+        with (
+            patch("pandas.read_csv") as mock_read_csv,
+            patch("src.data_loader.logger") as mock_logger,
+        ):
+            # Mock pandas to raise exception
+            mock_read_csv.side_effect = Exception("Read error")
+
+            # Execute
+            is_valid, error_message = validate_csv_schema(mock_file)
+
+            # Verify
+            assert is_valid is False
+            assert "Erreur lors de la validation" in error_message
+            assert "Read error" in error_message
+            mock_logger.error.assert_called_once()
+
+
+class TestLoadData:
+    """Tests for load_data function."""
+
+    def test_load_default_file_success(self):
+        """Test loading data from default file."""
+        sample_csv_data = pd.DataFrame(
+            {
+                "Date de comptabilisation": ["01/01/2026", "02/01/2026"],
+                "Libelle operation": ["Restaurant", "Groceries"],
+                "Categorie": ["Food", "Food"],
+                "Sous categorie": ["Restaurant", "Groceries"],
+                "Debit": [-50.0, -120.0],
+                "Credit": [0.0, 0.0],
+                "Date operation": ["01/01/2026", "02/01/2026"],
+            }
+        )
+
+        with (
+            patch("pandas.read_csv") as mock_read_csv,
+            patch("src.data_loader.logger") as mock_logger,
+            patch("src.data_loader.st.cache_data", lambda func: func),
+        ):  # Disable cache
+            mock_read_csv.return_value = sample_csv_data
+
+            # Execute
+            result = load_data(uploaded_file=None)
+
+            # Verify
+            assert isinstance(result, pd.DataFrame)
+            assert len(result) == 2
+            assert "CATEGORY" in result.columns
+            assert "SUBCATEGORY" in result.columns
+            assert "OPERATION_LABEL" in result.columns
+            assert "AMOUNT" in result.columns
+            assert "OPERATION_DATE" in result.columns
+
+            # Check that amounts are correctly calculated
+            assert all(result["AMOUNT"] < 0)  # All expenses should be negative
+
+            mock_logger.info.assert_any_call(
+                "Loading data from /workspace/data/20260101_20260201_operations.csv"
+            )
+            mock_logger.info.assert_any_call("Data loaded successfully: 2 operations")
+
+    def test_load_uploaded_file_success(self):
+        """Test loading data from uploaded file."""
+        mock_uploaded_file = Mock()
+        mock_uploaded_file.name = "test_upload.csv"
+
+        sample_csv_data = pd.DataFrame(
+            {
+                "Date de comptabilisation": ["01/01/2026"],
+                "Libelle operation": ["Test transaction"],
+                "Categorie": ["Transport"],
+                "Sous categorie": ["Bus"],
+                "Debit": [-30.0],
+                "Credit": [0.0],
+                "Date operation": ["01/01/2026"],
+            }
+        )
+
+        with (
+            patch("pandas.read_csv") as mock_read_csv,
+            patch("src.data_loader.logger") as mock_logger,
+            patch("src.data_loader.st.cache_data", lambda func: func),
+        ):  # Disable cache
+            mock_read_csv.return_value = sample_csv_data
+
+            # Execute
+            result = load_data(uploaded_file=mock_uploaded_file)
+
+            # Verify
+            assert isinstance(result, pd.DataFrame)
+            assert len(result) == 1
+            assert result.iloc[0]["CATEGORY"] == "Transport"
+            assert result.iloc[0]["AMOUNT"] == -30.0
+
+            mock_logger.info.assert_any_call("Loading data from uploaded file: test_upload.csv")
+            mock_logger.info.assert_any_call("Data loaded successfully: 1 operations")
+
+    def test_data_aggregation_and_transformation(self):
+        """Test that data is properly aggregated and transformed."""
+        # The function groups by CATEGORY, SUBCATEGORY, OPERATION_LABEL, OPERATION_DATE
+        # Let's test that basic transformation works correctly
+        sample_csv_data = pd.DataFrame(
+            {
+                "Date de comptabilisation": ["01/01/2026", "02/01/2026"],
+                "Libelle operation": ["Restaurant", "Groceries"],  # Different operations
+                "Categorie": ["Food", "Food"],
+                "Sous categorie": ["Restaurant", "Groceries"],  # Different subcategories
+                "Debit": [-50.0, -120.0],
+                "Credit": [0.0, 0.0],
+                "Date operation": ["01/01/2026", "02/01/2026"],
+            }
+        )
+
+        with (
+            patch("pandas.read_csv") as mock_read_csv,
+            patch("src.data_loader.st.cache_data", lambda func: func),
+        ):  # Disable cache
+            mock_read_csv.return_value = sample_csv_data
+
+            # Execute
+            result = load_data(uploaded_file=None)
+
+            # Verify basic transformation worked
+            assert len(result) == 2  # Two different operations
+            assert "CATEGORY" in result.columns
+            assert "SUBCATEGORY" in result.columns
+            assert "OPERATION_LABEL" in result.columns
+            assert "AMOUNT" in result.columns
+            assert "OPERATION_DATE" in result.columns
+
+            # Verify column mapping and amount calculation
+            assert all(result["AMOUNT"] < 0)  # All should be negative (expenses)
+
+    def test_mixed_debit_credit_calculation(self):
+        """Test amount calculation with both debit and credit values."""
+        sample_csv_data = pd.DataFrame(
+            {
+                "Date de comptabilisation": ["01/01/2026", "02/01/2026"],
+                "Libelle operation": ["Expense", "Income"],
+                "Categorie": ["Food", "Income"],
+                "Sous categorie": ["Restaurant", "Salary"],
+                "Debit": [-50.0, 0.0],
+                "Credit": [0.0, 1000.0],
+                "Date operation": ["01/01/2026", "02/01/2026"],
+            }
+        )
+
+        # Create a unique mock to avoid cache issues
+        mock_file = Mock()
+        mock_file.name = "unique_test_file.csv"
+
+        with (
+            patch("pandas.read_csv") as mock_read_csv,
+            patch("src.data_loader.st.cache_data", lambda func: func),
+        ):  # Disable cache
+            mock_read_csv.return_value = sample_csv_data
+
+            # Execute
+            result = load_data(uploaded_file=mock_file)
+
+            # Verify
+            assert len(result) == 2
+            amounts = result["AMOUNT"].tolist()
+            assert -50.0 in amounts  # Debit amount
+            assert 1000.0 in amounts  # Credit amount
+
+    def test_sorting_by_category(self):
+        """Test that results are sorted by category."""
+        sample_csv_data = pd.DataFrame(
+            {
+                "Date de comptabilisation": ["01/01/2026", "02/01/2026", "03/01/2026"],
+                "Libelle operation": ["Transport", "Food", "Housing"],
+                "Categorie": ["Transport", "Food", "Housing"],  # Not alphabetical
+                "Sous categorie": ["Bus", "Restaurant", "Rent"],
+                "Debit": [-30.0, -50.0, -800.0],
+                "Credit": [0.0, 0.0, 0.0],
+                "Date operation": ["01/01/2026", "02/01/2026", "03/01/2026"],
+            }
+        )
+
+        with (
+            patch("pandas.read_csv") as mock_read_csv,
+            patch("src.data_loader.st.cache_data", lambda func: func),
+        ):  # Disable cache
+            mock_read_csv.return_value = sample_csv_data
+
+            # Execute
+            result = load_data(uploaded_file=None)
+
+            # Verify sorting
+            categories = result["CATEGORY"].tolist()
+            assert categories == sorted(categories)  # Should be alphabetically sorted
 
 
 class TestFilterExpenses:

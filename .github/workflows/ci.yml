@@ -44,6 +44,8 @@ jobs:
           uv pip install -e .[dev]
           # Verify mypy installation
           which mypy || uv pip install mypy>=1.8.0
+          # Install additional type stubs for mypy
+          uv pip install pandas-stubs types-requests
 
       # Step 5: Run code linting and formatting checks with Ruff
       - name: Run linting

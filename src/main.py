@@ -31,7 +31,12 @@ def main() -> None:
     setup_monitoring()
 
     # Page configuration
-    st.set_page_config(**PAGE_CONFIG)
+    st.set_page_config(
+        page_title=PAGE_CONFIG["page_title"],
+        page_icon=PAGE_CONFIG["page_icon"],
+        layout=PAGE_CONFIG["layout"],
+        initial_sidebar_state=PAGE_CONFIG["initial_sidebar_state"],
+    )
 
     # Main title
     st.title("💰 Analyse des Opérations Bancaires")

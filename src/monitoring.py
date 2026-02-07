@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 
 from loguru import logger
 
@@ -59,24 +59,25 @@ class ApplicationMetrics:
 
     def increment_app_starts(self):
         """Increment app start counter."""
-        self.metrics["app_starts"] += 1
+        app_starts = cast(int, self.metrics["app_starts"])
+        self.metrics["app_starts"] = app_starts + 1
         self.save_metrics()
         logger.info(f"Application started (total starts: {self.metrics['app_starts']})")
 
     def increment_file_uploads(self, filename: str, file_size: int):
         """Track file upload."""
-        self.metrics["files_uploaded"] += 1
+        files_uploaded = cast(int, self.metrics["files_uploaded"])
+        self.metrics["files_uploaded"] = files_uploaded + 1
         self.save_metrics()
         logger.info(f"File uploaded: {filename} ({file_size} bytes)")
 
     def record_processing_time(self, duration: float):
         """Record data processing time."""
-        self.metrics["data_processing_time"].append(
-            {"duration": duration, "timestamp": datetime.now().isoformat()}
-        )
+        processing_time_list = cast(list[dict[str, Any]], self.metrics["data_processing_time"])
+        processing_time_list.append({"duration": duration, "timestamp": datetime.now().isoformat()})
         # Keep only last 100 measurements
-        if len(self.metrics["data_processing_time"]) > 100:
-            self.metrics["data_processing_time"] = self.metrics["data_processing_time"][-100:]
+        if len(processing_time_list) > 100:
+            self.metrics["data_processing_time"] = processing_time_list[-100:]
         self.save_metrics()
         logger.info(f"Data processing completed in {duration:.2f}s")
 
@@ -90,24 +91,30 @@ class ApplicationMetrics:
             "timestamp": datetime.now().isoformat(),
             "context": context or {},
         }
-        self.metrics["errors"].append(error_data)
+        errors_list = cast(list[dict[str, Any]], self.metrics["errors"])
+        errors_list.append(error_data)
         # Keep only last 50 errors
-        if len(self.metrics["errors"]) > 50:
-            self.metrics["errors"] = self.metrics["errors"][-50:]
+        if len(errors_list) > 50:
+            self.metrics["errors"] = errors_list[-50:]
         self.save_metrics()
         logger.error(f"Error recorded: {error_type} - {error_message}")
 
     def get_performance_summary(self) -> dict[str, Any]:
         """Get performance summary."""
-        processing_times = [item["duration"] for item in self.metrics["data_processing_time"]]
+        processing_time_list = cast(list[dict[str, Any]], self.metrics["data_processing_time"])
+        processing_times = [item["duration"] for item in processing_time_list]
+        errors_list = cast(list[dict[str, Any]], self.metrics["errors"])
+        app_starts = cast(int, self.metrics["app_starts"])
+        files_uploaded = cast(int, self.metrics["files_uploaded"])
+
         return {
-            "total_app_starts": self.metrics["app_starts"],
-            "total_files_uploaded": self.metrics["files_uploaded"],
-            "total_errors": len(self.metrics["errors"]),
+            "total_app_starts": app_starts,
+            "total_files_uploaded": files_uploaded,
+            "total_errors": len(errors_list),
             "avg_processing_time": sum(processing_times) / len(processing_times)
             if processing_times
             else 0,
-            "last_error": self.metrics["errors"][-1] if self.metrics["errors"] else None,
+            "last_error": errors_list[-1] if errors_list else None,
         }
 
 

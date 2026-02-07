@@ -1,3 +1,8 @@
+[global]
+# Production-optimized config for Streamlit Cloud
+developmentMode = false
+showWarningOnDirectExecution = false
+
 [theme]
 primaryColor="#2ecc71"
 backgroundColor="#ffffff"
@@ -9,8 +14,11 @@ font="sans serif"
 headless = true
 port = 8501
 enableCORS = false
-enableXsrfProtection = false
+enableXsrfProtection = true
 maxUploadSize = 200
 
 [browser]
 gatherUsageStats = false
+
+[logger]
+level = "info"

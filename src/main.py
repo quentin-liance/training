@@ -14,6 +14,7 @@ from src.data_loader import (
     validate_csv_schema,
 )
 from src.logger import logger  # Initialize logger configuration
+from src.monitoring import log_performance, metrics, setup_monitoring
 from src.ui_components import (
     create_aggrid_table,
     create_stacked_bar_chart,
@@ -21,9 +22,13 @@ from src.ui_components import (
 )
 
 
+@log_performance("main_application")
 def main() -> None:
     """Main entry point of the application."""
     logger.info("Starting Bank Operations Analysis application")
+
+    # Setup monitoring
+    setup_monitoring()
 
     # Page configuration
     st.set_page_config(**PAGE_CONFIG)
@@ -41,6 +46,9 @@ def main() -> None:
 
     # Validate schema if file is uploaded
     if uploaded_file is not None:
+        # Track file upload metrics
+        metrics.increment_file_uploads(uploaded_file.name, uploaded_file.size)
+
         is_valid, error_message = validate_csv_schema(uploaded_file)
         if not is_valid:
             st.error(

@@ -41,7 +41,9 @@ jobs:
         run: |
           uv venv
           source .venv/bin/activate
-          uv pip install -e '.[dev]'
+          uv pip install -e .[dev]
+          # Verify mypy installation
+          which mypy || uv pip install mypy>=1.8.0
 
       # Step 5: Run code linting and formatting checks with Ruff
       - name: Run linting

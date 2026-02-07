@@ -6,7 +6,7 @@ import re
 import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
+from typing import cast
 
 import click
 
@@ -14,7 +14,7 @@ import click
 class LogAnalyzer:
     """Analyze application logs for insights and issues."""
 
-    def __init__(self, logs_dir: Optional[Path] = None):
+    def __init__(self, logs_dir: Path | None = None):
         self.logs_dir = logs_dir or Path(__file__).parent.parent / "logs"
         self.patterns = {
             "error": re.compile(r"ERROR.*"),
@@ -34,10 +34,10 @@ class LogAnalyzer:
                 files.append(log_file)
         return files
 
-    def analyze_logs(self, days: int = 7) -> dict:
+    def analyze_logs(self, days: int = 7) -> dict[str, object]:
         """Analyze logs and return summary."""
         log_files = self.get_log_files(days)
-        analysis = {
+        analysis: dict[str, object] = {
             "period": f"Last {days} days",
             "files_analyzed": len(log_files),
             "total_lines": 0,
@@ -51,26 +51,34 @@ class LogAnalyzer:
 
         for log_file in log_files:
             try:
-                with open(log_file, encoding="utf-8") as f:
+                with log_file.open(encoding="utf-8") as f:
                     for line_num, line in enumerate(f, 1):
-                        analysis["total_lines"] += 1
+                        total_lines = analysis["total_lines"]
+                        assert isinstance(total_lines, int)
+                        analysis["total_lines"] = total_lines + 1
 
                         # Check for errors
                         if self.patterns["error"].search(line):
-                            analysis["errors"].append(
+                            errors = analysis["errors"]
+                            assert isinstance(errors, list)
+                            errors.append(
                                 {"file": log_file.name, "line": line_num, "message": line.strip()}
                             )
 
                         # Check for warnings
                         elif self.patterns["warning"].search(line):
-                            analysis["warnings"].append(
+                            warnings = analysis["warnings"]
+                            assert isinstance(warnings, list)
+                            warnings.append(
                                 {"file": log_file.name, "line": line_num, "message": line.strip()}
                             )
 
                         # Check for file uploads
                         upload_match = self.patterns["upload"].search(line)
                         if upload_match:
-                            analysis["uploads"].append(
+                            uploads = analysis["uploads"]
+                            assert isinstance(uploads, list)
+                            uploads.append(
                                 {
                                     "filename": upload_match.group(1),
                                     "size": int(upload_match.group(2)),
@@ -81,32 +89,46 @@ class LogAnalyzer:
                         # Check for processing times
                         proc_match = self.patterns["processing"].search(line)
                         if proc_match:
-                            analysis["processing_times"].append(float(proc_match.group(1)))
+                            processing_times = analysis["processing_times"]
+                            assert isinstance(processing_times, list)
+                            processing_times.append(float(proc_match.group(1)))
 
                         # Check for app starts
                         if self.patterns["app_start"].search(line):
-                            analysis["app_starts"] += 1
+                            app_starts = analysis["app_starts"]
+                            assert isinstance(app_starts, int)
+                            analysis["app_starts"] = app_starts + 1
 
             except Exception as e:
                 print(f"Error reading {log_file}: {e}")
 
         # Generate summary
+        errors = analysis["errors"]
+        warnings = analysis["warnings"]
+        uploads = analysis["uploads"]
+        processing_times = analysis["processing_times"]
+        app_starts = analysis["app_starts"]
+
+        assert isinstance(errors, list)
+        assert isinstance(warnings, list)
+        assert isinstance(uploads, list)
+        assert isinstance(processing_times, list)
+        assert isinstance(app_starts, int)
+
         analysis["summary"] = {
-            "error_count": len(analysis["errors"]),
-            "warning_count": len(analysis["warnings"]),
-            "upload_count": len(analysis["uploads"]),
+            "error_count": len(errors),
+            "warning_count": len(warnings),
+            "upload_count": len(uploads),
             "avg_processing_time": (
-                sum(analysis["processing_times"]) / len(analysis["processing_times"])
-                if analysis["processing_times"]
-                else 0
+                sum(processing_times) / len(processing_times) if processing_times else 0
             ),
-            "max_processing_time": max(analysis["processing_times"], default=0),
-            "total_app_starts": analysis["app_starts"],
+            "max_processing_time": max(processing_times, default=0),
+            "total_app_starts": app_starts,
         }
 
         return analysis
 
-    def _extract_timestamp(self, line: str) -> Optional[str]:
+    def _extract_timestamp(self, line: str) -> str | None:
         """Extract timestamp from log line."""
         timestamp_pattern = re.compile(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
         match = timestamp_pattern.search(line)
@@ -116,7 +138,7 @@ class LogAnalyzer:
 class LogMonitor:
     """Real-time log monitoring."""
 
-    def __init__(self, logs_dir: Optional[Path] = None):
+    def __init__(self, logs_dir: Path | None = None):
         self.logs_dir = logs_dir or Path(__file__).parent.parent / "logs"
         self.running = False
 
@@ -141,17 +163,19 @@ class LogMonitor:
                 print(f"Following log file: {today_log}")
                 print("Press Ctrl+C to stop...")
 
-                for line in iter(process.stdout.readline, ""):
-                    if line:
-                        # Color code different log levels
-                        if "ERROR" in line:
-                            print(f"\033[91m{line.strip()}\033[0m")  # Red
-                        elif "WARNING" in line:
-                            print(f"\033[93m{line.strip()}\033[0m")  # Yellow
-                        elif "INFO" in line:
-                            print(f"\033[92m{line.strip()}\033[0m")  # Green
-                        else:
-                            print(line.strip())
+                stdout = process.stdout
+                if stdout is not None:
+                    for line in iter(stdout.readline, ""):
+                        if line:
+                            # Color code different log levels
+                            if "ERROR" in line:
+                                print(f"\033[91m{line.strip()}\033[0m")  # Red
+                            elif "WARNING" in line:
+                                print(f"\033[93m{line.strip()}\033[0m")  # Yellow
+                            elif "INFO" in line:
+                                print(f"\033[92m{line.strip()}\033[0m")  # Green
+                            else:
+                                print(line.strip())
 
             except KeyboardInterrupt:
                 process.terminate()
@@ -161,7 +185,7 @@ class LogMonitor:
         else:
             # Just show last N lines
             try:
-                with open(today_log) as f:
+                with today_log.open() as f:
                     lines = f.readlines()
                     for line in lines[-50:]:  # Show last 50 lines
                         print(line.strip())
@@ -192,20 +216,23 @@ def analyze(days: int, output_format: str):
     if output_format == "json":
         print(json.dumps(analysis, indent=2, default=str))
     else:
-        print(f"📊 Log Analysis - {analysis['period']}")
+        print(f"📊 Log Analysis - {cast(str, analysis['period'])}")
         print("=" * 50)
-        print(f"Files analyzed: {analysis['files_analyzed']}")
-        print(f"Total log lines: {analysis['total_lines']:,}")
-        print(f"App starts: {analysis['summary']['total_app_starts']}")
-        print(f"File uploads: {analysis['summary']['upload_count']}")
-        print(f"Errors: {analysis['summary']['error_count']}")
-        print(f"Warnings: {analysis['summary']['warning_count']}")
-        print(f"Avg processing time: {analysis['summary']['avg_processing_time']:.2f}s")
-        print(f"Max processing time: {analysis['summary']['max_processing_time']:.2f}s")
+        print(f"Files analyzed: {cast(int, analysis['files_analyzed'])}")
+        print(f"Total log lines: {cast(int, analysis['total_lines']):,}")
 
-        if analysis["errors"]:
+        summary = cast(dict, analysis["summary"])
+        print(f"App starts: {cast(int, summary['total_app_starts'])}")
+        print(f"File uploads: {cast(int, summary['upload_count'])}")
+        print(f"Errors: {cast(int, summary['error_count'])}")
+        print(f"Warnings: {cast(int, summary['warning_count'])}")
+        print(f"Avg processing time: {cast(float, summary['avg_processing_time']):.2f}s")
+        print(f"Max processing time: {cast(float, summary['max_processing_time']):.2f}s")
+
+        errors = cast(list, analysis["errors"])
+        if errors:
             print("\n🔴 Recent Errors:")
-            for error in analysis["errors"][-5:]:  # Show last 5 errors
+            for error in errors[-5:]:  # Show last 5 errors
                 print(f"  • {error['file']}:{error['line']} - {error['message']}")
 
 

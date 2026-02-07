@@ -151,7 +151,6 @@ L'application attend un fichier CSV avec les colonnes suivantes :
 ```csv
 Date operation;Categorie;Sous categorie;Libelle operation;Debit;Credit
 31/01/2026;Alimentation;Restaurant;UBER EATS;-28,27;
-29/01/2026;Revenus et rentrees d'argent;Salaires;VIR SEPA HACKAJOO;;+2953,15
 ```
 
 ## 🛠️ Développement

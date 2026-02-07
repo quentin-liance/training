@@ -28,7 +28,7 @@ class ApplicationMetrics:
         """Load existing metrics from file."""
         if self.metrics_file.exists():
             try:
-                with open(self.metrics_file) as f:
+                with self.metrics_file.open() as f:
                     saved_metrics = json.load(f)
                     self.metrics.update(saved_metrics)
             except Exception as e:
@@ -38,7 +38,7 @@ class ApplicationMetrics:
         """Save metrics to file."""
         try:
             self.metrics_file.parent.mkdir(exist_ok=True)
-            with open(self.metrics_file, "w") as f:
+            with self.metrics_file.open("w") as f:
                 json.dump(self.metrics, f, indent=2)
         except Exception as e:
             logger.error(f"Failed to save metrics: {e}")
@@ -67,7 +67,7 @@ class ApplicationMetrics:
         logger.info(f"Data processing completed in {duration:.2f}s")
 
     def record_error(
-        self, error_type: str, error_message: str, context: Optional[Dict[str, Any]] = None
+        self, error_type: str, error_message: str, context: dict[str, Any] | None = None
     ):
         """Record application error."""
         error_data = {
@@ -101,7 +101,7 @@ class ApplicationMetrics:
 metrics = ApplicationMetrics()
 
 
-def log_performance(func_name: Optional[str] = None):
+def log_performance(func_name: str | None = None):
     """Decorator to log function performance."""
 
     def decorator(func):
@@ -149,7 +149,11 @@ class HealthChecker:
 
         import psutil
 
-        health_status = {"timestamp": datetime.now().isoformat(), "status": "healthy", "checks": {}}
+        health_status: dict[str, Any] = {
+            "timestamp": datetime.now().isoformat(),
+            "status": "healthy",
+            "checks": {},
+        }
 
         try:
             # Memory usage

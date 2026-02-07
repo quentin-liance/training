@@ -22,6 +22,7 @@ dev = [
     "pytest>=7.4.0",       # Testing framework
     "pytest-cov>=4.1.0",   # Code coverage plugin for pytest
     "ruff>=0.1.15",        # Fast Python linter and formatter
+    "mypy>=1.8.0",         # Static type checker
     "pre-commit>=3.6.0",   # Git hooks manager for code quality
     "ipython>=8.20.0",     # Enhanced Python interactive shell
 ]
@@ -91,3 +92,26 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
 ]
+
+# ========================================
+# MyPy Configuration
+# ========================================
+[tool.mypy]
+python_version = "3.11"          # Target Python version
+warn_return_any = true           # Warn about functions that return Any
+warn_unused_configs = true       # Warn about unused mypy configurations
+disallow_untyped_defs = false    # Allow untyped function definitions for now
+check_untyped_defs = true        # Check the body of untyped functions
+strict_optional = true           # Enable strict optional type checking
+show_error_codes = true          # Show error codes in error messages
+
+# Per-module configuration
+[[tool.mypy.overrides]]
+module = [
+    "streamlit.*",
+    "plotly.*",
+    "loguru.*",
+    "st_aggrid.*",
+    "psutil.*",
+]
+ignore_missing_imports = true    # Ignore missing type stubs for these modules

@@ -40,11 +40,29 @@ class ApplicationMetrics:
             try:
                 with self.metrics_file.open() as f:
                     saved_metrics = json.load(f)
-                    # Ensure the loaded data matches our expected structure
+                    # Validate and load only safe data with proper types
                     if isinstance(saved_metrics, dict):
-                        for key, value in saved_metrics.items():
-                            if key in self.metrics:
-                                self.metrics[key] = value  # type: ignore
+                        # Safely update with type validation
+                        if "app_starts" in saved_metrics and isinstance(
+                            saved_metrics["app_starts"], int
+                        ):
+                            self.metrics["app_starts"] = saved_metrics["app_starts"]
+                        if "files_uploaded" in saved_metrics and isinstance(
+                            saved_metrics["files_uploaded"], int
+                        ):
+                            self.metrics["files_uploaded"] = saved_metrics["files_uploaded"]
+                        if "data_processing_time" in saved_metrics and isinstance(
+                            saved_metrics["data_processing_time"], list
+                        ):
+                            self.metrics["data_processing_time"] = saved_metrics[
+                                "data_processing_time"
+                            ]
+                        if "errors" in saved_metrics and isinstance(saved_metrics["errors"], list):
+                            self.metrics["errors"] = saved_metrics["errors"]
+                        if "users_sessions" in saved_metrics and isinstance(
+                            saved_metrics["users_sessions"], int
+                        ):
+                            self.metrics["users_sessions"] = saved_metrics["users_sessions"]
             except Exception as e:
                 logger.error(f"Failed to load metrics: {e}")
 

@@ -23,6 +23,7 @@ dev = [
     "pytest-cov>=4.1.0",   # Code coverage plugin for pytest
     "ruff>=0.1.15",        # Fast Python linter and formatter
     "mypy>=1.8.0",         # Static type checker
+    "pandas-stubs>=2.0.0", # Type stubs for pandas
     "pre-commit>=3.6.0",   # Git hooks manager for code quality
     "ipython>=8.20.0",     # Enhanced Python interactive shell
 ]

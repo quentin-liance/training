@@ -5,16 +5,26 @@ import time
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 from loguru import logger
+
+
+class MetricsData(TypedDict):
+    """Type definition for metrics data structure."""
+
+    app_starts: int
+    files_uploaded: int
+    data_processing_time: list[dict[str, Any]]
+    errors: list[dict[str, Any]]
+    users_sessions: int
 
 
 class ApplicationMetrics:
     """Track application metrics and performance."""
 
     def __init__(self):
-        self.metrics = {
+        self.metrics: MetricsData = {
             "app_starts": 0,
             "files_uploaded": 0,
             "data_processing_time": [],
@@ -30,7 +40,11 @@ class ApplicationMetrics:
             try:
                 with self.metrics_file.open() as f:
                     saved_metrics = json.load(f)
-                    self.metrics.update(saved_metrics)
+                    # Ensure the loaded data matches our expected structure
+                    if isinstance(saved_metrics, dict):
+                        for key, value in saved_metrics.items():
+                            if key in self.metrics:
+                                self.metrics[key] = value  # type: ignore
             except Exception as e:
                 logger.error(f"Failed to load metrics: {e}")
 

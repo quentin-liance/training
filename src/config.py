@@ -1,6 +1,7 @@
 """Application configuration."""
 
 from pathlib import Path
+from typing import Any
 
 # Paths
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -40,7 +41,7 @@ COLUMNS_MAPPING = {
 }
 
 # Streamlit configuration
-PAGE_CONFIG = {
+PAGE_CONFIG: dict[str, Any] = {
     "page_title": "Analyse des Opérations Bancaires",
     "page_icon": "💰",
     "layout": "wide",

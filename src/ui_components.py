@@ -214,42 +214,24 @@ def create_aggrid_table(summary: pd.DataFrame) -> None:
         valueFormatter="value.toFixed(1) + ' %'",
         cellStyle={"fontSize": "16px", "textAlign": "right"},
     )
-    # Configuration de pagination robuste avec plus d'options
-    gb_summary.configure_pagination(
-        enabled=True, paginationAutoPageSize=False, paginationPageSize=PAGINATION_PAGE_SIZE
-    )
+    # Configuration simple et robuste de la pagination
+    gb_summary.configure_pagination(enabled=True, paginationPageSize=PAGINATION_PAGE_SIZE)
     gb_summary.configure_side_bar()
-
-    # Configuration des options de grille
-    gb_summary.configure_grid_options(
-        headerHeight=50,
-        rowHeight=40,
-        animateRows=True,
-        suppressLoadingOverlay=True,
-        suppressNoRowsOverlay=True,
-    )
-
-    # Options de grille avec pagination explicite et améliorée
-    grid_options = gb_summary.build()
-    grid_options["pagination"] = True
-    grid_options["paginationPageSize"] = PAGINATION_PAGE_SIZE
-    grid_options["paginationPageSizeSelector"] = [10, 25, 50, 100]
-    grid_options["suppressPaginationPanel"] = False
-    grid_options["paginationNumberFormatter"] = None
-    grid_options["domLayout"] = "normal"
 
     # Affichage du nombre total de lignes
     st.markdown(f"**📊 Nombre total d'opérations : {len(summary)}**")
+
+    # Construction des options avec pagination garantie
+    grid_options = gb_summary.build()
 
     AgGrid(
         summary,
         gridOptions=grid_options,
         fit_columns_on_grid_load=False,
         theme="streamlit",
-        height=700,  # Hauteur augmentée pour un meilleur affichage
+        height=700,
+        enable_enterprise_modules=False,
         allow_unsafe_jscode=True,
-        reload_data=False,
-        update_mode="NO_UPDATE",
         custom_css={
             ".ag-header-cell-text": {
                 "font-size": "16px !important",
@@ -257,6 +239,7 @@ def create_aggrid_table(summary: pd.DataFrame) -> None:
                 "color": "#2C3E50 !important",
             },
             ".ag-cell": {"font-size": "16px !important", "line-height": "40px !important"},
-            ".ag-paging-panel": {"font-size": "16px !important", "padding": "10px !important"},
+            ".ag-paging-panel": {"font-size": "14px !important", "padding": "8px !important"},
+            ".ag-paging-button": {"margin": "0 2px !important"},
         },
     )

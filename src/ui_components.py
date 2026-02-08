@@ -6,8 +6,6 @@ import streamlit as st
 from loguru import logger
 from st_aggrid import AgGrid, GridOptionsBuilder
 
-from src.config import PAGINATION_PAGE_SIZE
-
 
 def display_sidebar_statistics(stats: dict) -> None:
     """Display statistics in the sidebar.
@@ -59,15 +57,11 @@ def create_stacked_bar_chart(cat_subcat: pd.DataFrame, totals_cat: pd.DataFrame)
             "CATEGORY": "Catégorie",
             "SUBCATEGORY": "Sous-catégorie",
         },
-        text_auto=True,
         color_discrete_sequence=color_sequence,
     )
 
     # Update traces for better visuals
     fig.update_traces(
-        texttemplate="%{y:.0f} €",
-        textposition="inside",
-        textfont={"size": 18, "color": "white", "family": "Arial"},
         marker={"line": {"color": "white", "width": 1}},  # Add white borders
         hovertemplate="<b>%{fullData.name}</b><br>Montant : %{y:.2f} €<extra></extra>",
     )
@@ -123,40 +117,55 @@ def create_stacked_bar_chart(cat_subcat: pd.DataFrame, totals_cat: pd.DataFrame)
     return fig
 
 
-def create_aggrid_table(summary: pd.DataFrame) -> None:
+def create_aggrid_table(summary: pd.DataFrame) -> pd.DataFrame:
     """Create and display AG Grid table with configuration.
 
     Args:
         summary: DataFrame of summary table
+
+    Returns:
+        DataFrame with selected rows to exclude from analysis
     """
     logger.debug(f"Creating AG Grid table with {len(summary)} rows")
+
+    # Vérifier que le summary n'est pas vide
+    if summary.empty:
+        st.error("⚠️ Aucune donnée à afficher dans le tableau")
+        return pd.DataFrame()
+
+    # Configuration AG Grid
     gb_summary = GridOptionsBuilder.from_dataframe(summary)
 
-    # Configuration par défaut avec police plus grande
+    # Configuration par défaut
     gb_summary.configure_default_column(
         filterable=True,
         sortable=True,
         resizable=True,
-        cellStyle={"fontSize": "16px", "fontFamily": "Arial"},
         headerHeight=50,
     )
 
-    # Configuration des colonnes avec des largeurs augmentées et des en-têtes plus clairs
+    # Configuration des colonnes essentielles uniquement
+    gb_summary.configure_column(
+        "Date",
+        header_name="Date",
+        pinned="left",
+        width=120,
+    )
     gb_summary.configure_column(
         "CATEGORY",
         header_name="Catégorie",
         pinned="left",
         width=200,
-        cellStyle={"fontSize": "16px", "fontWeight": "bold"},
     )
     gb_summary.configure_column(
-        "SUBCATEGORY", header_name="Sous-catégorie", width=200, cellStyle={"fontSize": "16px"}
+        "SUBCATEGORY",
+        header_name="Sous-catégorie",
+        width=220,
     )
     gb_summary.configure_column(
         "OPERATION_LABEL",
         header_name="Libellé de l'opération",
-        width=350,
-        cellStyle={"fontSize": "16px"},
+        width=400,
     )
     gb_summary.configure_column(
         "Total (€)",
@@ -164,74 +173,45 @@ def create_aggrid_table(summary: pd.DataFrame) -> None:
         width=150,
         type=["numericColumn"],
         valueFormatter="value.toFixed(0) + ' €'",
-        cellStyle={"fontSize": "16px", "fontWeight": "bold", "textAlign": "right"},
+        cellStyle={"textAlign": "right"},
     )
-    gb_summary.configure_column(
-        "Subcategory Total (€)",
-        header_name="Total Sous-catégorie (€)",
-        width=200,
-        type=["numericColumn"],
-        valueFormatter="value.toFixed(0) + ' €'",
-        cellStyle={"fontSize": "16px", "textAlign": "right"},
-    )
-    gb_summary.configure_column(
-        "Category Total (€)",
-        header_name="Total Catégorie (€)",
-        width=180,
-        type=["numericColumn"],
-        valueFormatter="value.toFixed(0) + ' €'",
-        cellStyle={"fontSize": "16px", "textAlign": "right"},
-    )
-    gb_summary.configure_column(
-        "Global Total (€)",
-        header_name="Total Global (€)",
-        width=170,
-        type=["numericColumn"],
-        valueFormatter="value.toFixed(0) + ' €'",
-        cellStyle={"fontSize": "16px", "textAlign": "right"},
-    )
-    gb_summary.configure_column(
-        "Detail/Subcat Ratio (%)",
-        header_name="% du Détail/Sous-cat.",
-        width=180,
-        type=["numericColumn"],
-        valueFormatter="value.toFixed(1) + ' %'",
-        cellStyle={"fontSize": "16px", "textAlign": "right"},
-    )
-    gb_summary.configure_column(
-        "Subcat/Cat Ratio (%)",
-        header_name="% Sous-cat./Cat.",
-        width=170,
-        type=["numericColumn"],
-        valueFormatter="value.toFixed(1) + ' %'",
-        cellStyle={"fontSize": "16px", "textAlign": "right"},
-    )
-    gb_summary.configure_column(
-        "Cat/Global Ratio (%)",
-        header_name="% Cat./Global",
-        width=160,
-        type=["numericColumn"],
-        valueFormatter="value.toFixed(1) + ' %'",
-        cellStyle={"fontSize": "16px", "textAlign": "right"},
-    )
-    # Configuration simple et robuste de la pagination
-    gb_summary.configure_pagination(enabled=True, paginationPageSize=PAGINATION_PAGE_SIZE)
+
+    # Cacher la colonne de couleur
+    gb_summary.configure_column("_row_color", hide=True)
+
+    # Configuration pour afficher toutes les lignes sans restriction
     gb_summary.configure_side_bar()
 
-    # Affichage du nombre total de lignes
-    st.markdown(f"**📊 Nombre total d'opérations : {len(summary)}**")
+    # Configuration de la sélection des lignes
+    gb_summary.configure_selection(
+        selection_mode="multiple",
+        use_checkbox=True,
+        groupSelectsChildren=False,
+        groupSelectsFiltered=False,
+    )
 
-    # Construction des options avec pagination garantie
+    # Affichage du nombre total de lignes
+    st.markdown(f"**📊 Nombre total d'opérations : {len(summary)} - Toutes affichées**")
+    st.markdown("✅ **Cochez les lignes que vous souhaitez exclure de l'analyse**")
+
+    # Construction des options pour afficher TOUTES les données
     grid_options = gb_summary.build()
 
-    AgGrid(
+    # Configuration simplifiée pour éviter les conflits
+    grid_options["pagination"] = False
+    grid_options["rowSelection"] = "multiple"
+    grid_options["suppressRowClickSelection"] = True  # Seulement checkbox pour sélection
+
+    grid_response = AgGrid(
         summary,
         gridOptions=grid_options,
-        fit_columns_on_grid_load=False,
+        fit_columns_on_grid_load=True,
         theme="streamlit",
-        height=700,
+        height=600,
         enable_enterprise_modules=False,
-        allow_unsafe_jscode=True,
+        allow_unsafe_jscode=False,
+        update_mode="SELECTION_CHANGED",
+        data_return_mode="FILTERED_AND_SORTED",
         custom_css={
             ".ag-header-cell-text": {
                 "font-size": "16px !important",
@@ -239,7 +219,53 @@ def create_aggrid_table(summary: pd.DataFrame) -> None:
                 "color": "#2C3E50 !important",
             },
             ".ag-cell": {"font-size": "16px !important", "line-height": "40px !important"},
-            ".ag-paging-panel": {"font-size": "14px !important", "padding": "8px !important"},
-            ".ag-paging-button": {"margin": "0 2px !important"},
+            ".ag-selection-checkbox": {"transform": "scale(1.2) !important"},
+            ".ag-row-even": {
+                "background-color": "#F8F8F8 !important",
+            },
+            ".ag-row-odd": {
+                "background-color": "#FFFFFF !important",
+            },
         },
     )
+
+    # Récupération des lignes sélectionnées
+    selected_rows = grid_response.get("selected_rows", [])
+
+    # Vérification robuste si des lignes sont sélectionnées (éviter l'ambiguïté DataFrame)
+    has_selection = False
+    try:
+        if isinstance(selected_rows, list):
+            has_selection = len(selected_rows) > 0
+        elif hasattr(selected_rows, "__len__"):
+            has_selection = len(selected_rows) > 0
+        else:
+            has_selection = False
+    except Exception:
+        has_selection = False
+
+    if has_selection:
+        selected_df = pd.DataFrame(selected_rows)
+        st.markdown(f"🚫 **{len(selected_rows)} opération(s) sélectionnée(s) pour exclusion**")
+
+        # Affichage des lignes sélectionnées pour confirmation
+        with st.expander(f"📋 Voir les {len(selected_rows)} opération(s) à exclure"):
+            # Préparer les données à afficher avec seulement 3 colonnes
+            display_columns = ["OPERATION_LABEL", "Total (€)", "Date"]
+            selected_display = selected_df[display_columns].copy()
+
+            # Renommer les colonnes pour l'export
+            selected_display.columns = ["Libellé", "Montant (€)", "Date"]
+
+            # Afficher le tableau
+            st.dataframe(selected_display, use_container_width=True)
+
+            # Préparer les données pour le presse-papier
+            # Format TSV pour Excel avec virgule comme séparateur décimal
+            clipboard_data = selected_display.to_csv(sep="\t", index=False, decimal=",")
+            st.code(clipboard_data, language=None)
+
+        return selected_df
+    else:
+        st.markdown("ℹ️ **Aucune opération sélectionnée pour exclusion**")
+        return pd.DataFrame()

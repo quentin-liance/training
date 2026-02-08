@@ -177,65 +177,53 @@ def calculate_category_totals(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_summary_table(df: pd.DataFrame, df_negative: pd.DataFrame) -> pd.DataFrame:
-    """Prepare summary table with all ratios.
+    """Prepare summary table with essential columns only.
 
     Args:
         df: DataFrame of filtered expenses (for calculations)
-        df_negative: Complete DataFrame of expenses (for global total)
+        df_negative: Complete DataFrame of expenses (not used but kept for compatibility)
 
     Returns:
-        DataFrame with detailed columns and calculated ratios
+        DataFrame with essential columns only
     """
-    logger.info("Preparing summary table with ratios")
-    # Calculate totals and ratios
-    summary = (
-        df.groupby(["CATEGORY", "SUBCATEGORY", "OPERATION_LABEL"]).agg({"AMOUNT": "sum"}).round(2)
-    )
-    summary.columns = ["Total (€)"]
-    summary = summary.reset_index()
+    logger.info("Preparing summary table with essential columns")
 
-    # Total by subcategory
-    total_subcat = df.groupby(["CATEGORY", "SUBCATEGORY"])["AMOUNT"].sum().reset_index()
-    total_subcat.columns = ["CATEGORY", "SUBCATEGORY", "Subcategory Total (€)"]
+    # Vérifier que le DataFrame n'est pas vide
+    if df.empty:
+        logger.warning("DataFrame is empty, returning empty summary table")
+        return pd.DataFrame(
+            columns=["Date", "CATEGORY", "SUBCATEGORY", "OPERATION_LABEL", "Total (€)"]
+        )
 
-    # Total by category
-    total_cat = df.groupby("CATEGORY")["AMOUNT"].sum().reset_index()
-    total_cat.columns = ["CATEGORY", "Category Total (€)"]
+    try:
+        # Simple aggregation keeping essential information
+        summary = (
+            df.groupby(["CATEGORY", "SUBCATEGORY", "OPERATION_LABEL", "OPERATION_DATE"])
+            .agg({"AMOUNT": "sum"})
+            .round(2)
+        )
+        summary.columns = ["Total (€)"]
+        summary = summary.reset_index()
 
-    # Global total
-    total_global = df_negative["AMOUNT"].sum()
+        # Format date for display
+        summary["Date"] = summary["OPERATION_DATE"].dt.strftime("%Y-%m-%d")
 
-    # Merge totals
-    summary = summary.merge(total_subcat, on=["CATEGORY", "SUBCATEGORY"], how="left")
-    summary = summary.merge(total_cat, on="CATEGORY", how="left")
-    summary["Global Total (€)"] = total_global
-
-    # Calculate ratios (in %)
-    summary["Detail/Subcat Ratio (%)"] = (
-        summary["Total (€)"] / summary["Subcategory Total (€)"] * 100
-    ).round(1)
-    summary["Subcat/Cat Ratio (%)"] = (
-        summary["Subcategory Total (€)"] / summary["Category Total (€)"] * 100
-    ).round(1)
-    summary["Cat/Global Ratio (%)"] = (
-        summary["Category Total (€)"] / summary["Global Total (€)"] * 100
-    ).round(1)
-
-    # Reorganize columns
-    summary = summary[
-        [
-            "CATEGORY",
-            "SUBCATEGORY",
-            "OPERATION_LABEL",
-            "Total (€)",
-            "Detail/Subcat Ratio (%)",
-            "Subcategory Total (€)",
-            "Subcat/Cat Ratio (%)",
-            "Category Total (€)",
-            "Cat/Global Ratio (%)",
-            "Global Total (€)",
+        # Keep only essential columns
+        summary = summary[
+            [
+                "Date",
+                "CATEGORY",
+                "SUBCATEGORY",
+                "OPERATION_LABEL",
+                "Total (€)",
+            ]
         ]
-    ]
 
-    logger.info(f"Summary table prepared: {len(summary)} rows")
-    return summary
+        logger.info(f"Summary table prepared: {len(summary)} rows")
+        return summary
+
+    except Exception as e:
+        logger.error(f"Error preparing summary table: {e}")
+        return pd.DataFrame(
+            columns=["Date", "CATEGORY", "SUBCATEGORY", "OPERATION_LABEL", "Total (€)"]
+        )

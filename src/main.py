@@ -3,7 +3,7 @@
 import pandas as pd
 import streamlit as st
 
-from src.config import DEFAULT_QUANTILE_THRESHOLD, PAGE_CONFIG
+from src.config import PAGE_CONFIG
 from src.data_loader import (
     calculate_category_totals,
     calculate_statistics,
@@ -135,21 +135,9 @@ def main() -> None:
 
     st.sidebar.markdown("---")
 
-    quantile_threshold = (
-        st.sidebar.slider(
-            "Seuil d'exclusion des valeurs extrêmes (%)",
-            min_value=0,
-            max_value=20,
-            value=DEFAULT_QUANTILE_THRESHOLD,
-            step=1,
-            help="Pourcentage des dépenses les plus élevées à exclure",
-        )
-        / 100
-    )
-
-    # Filter expenses
-    logger.info(f"User selected quantile threshold: {quantile_threshold * 100}%")
-    df_negative = filter_expenses(df, quantile_threshold)
+    # Filter expenses without quantile threshold (show all expenses)
+    logger.info("Processing all expenses without quantile exclusion")
+    df_negative = filter_expenses(df, 0.0)  # 0.0 = no exclusion
 
     # General statistics in sidebar
     stats = calculate_statistics(df_negative)
@@ -195,18 +183,47 @@ def main() -> None:
             f"selected ({len(df_filtered)} operations)"
         )
 
-    # Prepare data for chart
-    cat_subcat = prepare_chart_data(df_filtered)
-    totals_cat = calculate_category_totals(df_filtered)
-
-    # Display stacked bar chart
-    fig_stacked = create_stacked_bar_chart(cat_subcat, totals_cat)
-    st.plotly_chart(fig_stacked, width="stretch")
-
-    # Summary table
+    # Summary table with row selection (afficher en premier)
     st.subheader("Tableau Récapitulatif")
     summary = prepare_summary_table(df_filtered, df_negative)
-    create_aggrid_table(summary)
+    selected_for_exclusion = create_aggrid_table(summary)
+
+    # Calculer les données pour le graphique en fonction des exclusions
+    if not selected_for_exclusion.empty and len(selected_for_exclusion) > 0:
+        # Exclure les lignes sélectionnées
+        excluded_labels = selected_for_exclusion["OPERATION_LABEL"].tolist()
+        df_analysis = df_filtered[~df_filtered["OPERATION_LABEL"].isin(excluded_labels)]
+
+        st.markdown(
+            f"📊 **{len(df_analysis)} opérations analysées** "
+            f"(exclu : {len(selected_for_exclusion)})"
+        )
+
+        if df_analysis.empty:
+            st.warning("⚠️ Toutes les opérations ont été exclues de l'analyse!")
+            return
+    else:
+        df_analysis = df_filtered
+        st.markdown(f"📊 **{len(df_analysis)} opérations analysées** (aucune exclusion)")
+
+    # Préparer et afficher LE graphique unique basé sur les données après exclusions
+    cat_subcat = prepare_chart_data(df_analysis)
+    totals_cat = calculate_category_totals(df_analysis)
+
+    st.markdown("---")
+    st.subheader("📊 Répartition des Dépenses")
+    fig_stacked = create_stacked_bar_chart(cat_subcat, totals_cat)
+    st.plotly_chart(fig_stacked, use_container_width=True)
+
+    # Afficher les statistiques mises à jour dans la sidebar
+    stats_updated = calculate_statistics(df_analysis)
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("📈 Statistiques Finales")
+    st.sidebar.metric("Opérations analysées", stats_updated["count"])
+    st.sidebar.metric("Total", f"{stats_updated['total']:.0f} €")
+    st.sidebar.metric("Moyenne", f"{stats_updated['mean']:.0f} €")
+    st.sidebar.metric("Min", f"{stats_updated['min']:.0f} €")
+    st.sidebar.metric("Max", f"{stats_updated['max']:.0f} €")
 
     # Footer
     st.markdown("---")

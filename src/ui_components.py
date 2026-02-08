@@ -179,6 +179,9 @@ def create_aggrid_table(summary: pd.DataFrame) -> pd.DataFrame:
     # Cacher la colonne de couleur
     gb_summary.configure_column("_row_color", hide=True)
 
+    # Configuration pour afficher toutes les lignes sans restriction
+    gb_summary.configure_side_bar()
+
     # Configuration de la sélection des lignes
     gb_summary.configure_selection(
         selection_mode="multiple",
@@ -211,11 +214,11 @@ def create_aggrid_table(summary: pd.DataFrame) -> pd.DataFrame:
         data_return_mode="FILTERED_AND_SORTED",
         custom_css={
             ".ag-header-cell-text": {
-                "font-size": "16px !important",
+                "font-size": "14px !important",
                 "font-weight": "bold !important",
                 "color": "#2C3E50 !important",
             },
-            ".ag-cell": {"font-size": "16px !important", "line-height": "40px !important"},
+            ".ag-cell": {"font-size": "14px !important", "line-height": "40px !important"},
             ".ag-selection-checkbox": {"transform": "scale(1.2) !important"},
             ".ag-row-even": {
                 "background-color": "#F8F8F8 !important",

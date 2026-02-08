@@ -179,9 +179,6 @@ def create_aggrid_table(summary: pd.DataFrame) -> pd.DataFrame:
     # Cacher la colonne de couleur
     gb_summary.configure_column("_row_color", hide=True)
 
-    # Configuration pour afficher toutes les lignes sans restriction
-    gb_summary.configure_side_bar()
-
     # Configuration de la sélection des lignes
     gb_summary.configure_selection(
         selection_mode="multiple",

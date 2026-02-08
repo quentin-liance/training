@@ -172,9 +172,8 @@ class TestCreateStackedBarChart:
         assert layout.title.x == 0.5
         assert layout.title.xanchor == "center"
 
-        # Test legend configuration
-        assert layout.legend.orientation == "v"
-        assert layout.legend.title.text == "<b>Sous-catégorie</b>"
+        # Test legend configuration - legend is hidden
+        assert layout.showlegend is False
 
         # Test axis configuration
         assert layout.xaxis.categoryorder == "total descending"
@@ -189,16 +188,11 @@ class TestCreateAggridTable:
         """Sample summary table data."""
         return pd.DataFrame(
             {
+                "Date": ["2026-01-01", "2026-01-02"],
                 "CATEGORY": ["Food", "Transport"],
                 "SUBCATEGORY": ["Restaurant", "Bus"],
                 "OPERATION_LABEL": ["Lunch", "Metro ticket"],
                 "Total (€)": [-50.0, -30.0],
-                "Subcategory Total (€)": [-150.0, -80.0],
-                "Category Total (€)": [-300.0, -120.0],
-                "Global Total (€)": [-420.0, -420.0],
-                "Detail/Subcat Ratio (%)": [33.3, 37.5],
-                "Subcat/Cat Ratio (%)": [50.0, 66.7],
-                "Cat/Global Ratio (%)": [71.4, 28.6],
             }
         )
 
@@ -249,7 +243,7 @@ class TestCreateAggridTable:
 
         # Verify column configurations are called
         mock_builder_instance.configure_default_column.assert_called_once_with(
-            filterable=True, sortable=True, resizable=True
+            filterable=True, sortable=True, resizable=True, headerHeight=50
         )
 
         # Check that specific columns are configured
@@ -270,7 +264,7 @@ class TestCreateAggridTable:
     def test_create_table_pagination_sidebar(
         self, mock_grid_builder, mock_aggrid, mock_logger, sample_summary_data
     ):
-        """Test pagination and sidebar configuration."""
+        """Test sidebar configuration (no pagination)."""
         # Setup mocks
         mock_builder_instance = Mock()
         mock_grid_builder.from_dataframe.return_value = mock_builder_instance
@@ -279,38 +273,35 @@ class TestCreateAggridTable:
         # Execute
         create_aggrid_table(sample_summary_data)
 
-        # Verify pagination configuration
-        mock_builder_instance.configure_pagination.assert_called_once_with(
-            enabled=True,
-            paginationAutoPageSize=False,
-            paginationPageSize=50,  # PAGINATION_PAGE_SIZE mis à jour
-        )
+        # Verify pagination is NOT configured (we use scroll)
+        mock_builder_instance.configure_pagination.assert_not_called()
 
-        # Verify sidebar is configured
-        mock_builder_instance.configure_side_bar.assert_called_once()
+        # Verify selection is configured
+        mock_builder_instance.configure_selection.assert_called_once()
 
+    @patch("src.ui_components.st")
     @patch("src.ui_components.logger")
     @patch("src.ui_components.AgGrid")
     @patch("src.ui_components.GridOptionsBuilder")
-    def test_create_table_empty_dataframe(self, mock_grid_builder, mock_aggrid, mock_logger):
+    def test_create_table_empty_dataframe(
+        self, mock_grid_builder, mock_aggrid, mock_logger, mock_st
+    ):
         """Test table creation with empty DataFrame."""
-        empty_df = pd.DataFrame(columns=["CATEGORY", "SUBCATEGORY", "OPERATION_LABEL", "Total (€)"])
-
-        # Setup mocks
-        mock_builder_instance = Mock()
-        mock_grid_builder.from_dataframe.return_value = mock_builder_instance
-        mock_builder_instance.build.return_value = {"test": "options"}
+        empty_df = pd.DataFrame(
+            columns=["Date", "CATEGORY", "SUBCATEGORY", "OPERATION_LABEL", "Total (€)"]
+        )
 
         # Execute
-        create_aggrid_table(empty_df)
+        result = create_aggrid_table(empty_df)
 
         # Verify logger shows 0 rows
         mock_logger.debug.assert_called_once()
         log_message = mock_logger.debug.call_args[0][0]
         assert "Creating AG Grid table with 0 rows" in log_message
 
-        # Verify AgGrid is still called
-        mock_aggrid.assert_called_once()
+        # Verify st.error is called and empty DataFrame is returned
+        mock_st.error.assert_called_once_with("⚠️ Aucune donnée à afficher dans le tableau")
+        assert result.empty
 
     @patch("src.ui_components.logger")
     @patch("src.ui_components.AgGrid")
@@ -340,5 +331,5 @@ class TestCreateAggridTable:
         log_message = mock_logger.debug.call_args[0][0]
         assert "Creating AG Grid table with 100 rows" in log_message
 
-        # Verify pagination is used for large datasets
-        mock_builder_instance.configure_pagination.assert_called_once()
+        # Verify pagination is NOT used - we use scroll for all datasets
+        mock_builder_instance.configure_pagination.assert_not_called()

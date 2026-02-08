@@ -61,7 +61,13 @@ class TestMain:
             processed_df["OPERATION_DATE"] = datetime_series
 
             mock_filter.return_value = processed_df
-            mock_stats.return_value = {"count": 2, "total": -80.0}
+            mock_stats.return_value = {
+                "count": 2,
+                "total": -80.0,
+                "mean": -40.0,
+                "min": -30.0,
+                "max": -50.0,
+            }
             mock_prepare_chart.return_value = pd.DataFrame()
             mock_calc_totals.return_value = pd.DataFrame()
             mock_chart.return_value = MagicMock()
@@ -75,7 +81,9 @@ class TestMain:
             mock_st.title.assert_called_once_with("💰 Analyse des Opérations Bancaires")
             mock_load_data.assert_called_once_with(None)
             mock_filter.assert_called_once()
-            mock_stats.assert_called_once()
+            # calculate_statistics est appelé 2 fois:
+            # une fois pour toutes les données, une fois après exclusions
+            assert mock_stats.call_count == 2
 
     @patch("src.main.st")
     @patch("src.main.validate_csv_schema")
@@ -251,7 +259,13 @@ class TestMain:
             processed_df["OPERATION_DATE"] = datetime_series
 
             mock_filter.return_value = processed_df
-            mock_stats.return_value = {"count": 3, "total": -100.0}
+            mock_stats.return_value = {
+                "count": 3,
+                "total": -100.0,
+                "mean": -33.33,
+                "min": -20.0,
+                "max": -50.0,
+            }
             mock_prepare_chart.return_value = pd.DataFrame()
             mock_calc_totals.return_value = pd.DataFrame()
             mock_chart.return_value = MagicMock()
@@ -263,7 +277,9 @@ class TestMain:
             # Verify the main components were called
             mock_st.set_page_config.assert_called_once()
             mock_filter.assert_called_once()
-            mock_stats.assert_called_once()
+            # calculate_statistics is called twice:
+            # once for all data, once for final analysis after exclusions
+            assert mock_stats.call_count == 2
             # Just verify multiselect was called, don't check exact parameters
             assert mock_st.multiselect.call_count >= 2  # categories and subcategories
 
@@ -320,7 +336,13 @@ class TestMain:
             processed_df["OPERATION_DATE"] = datetime_series
 
             mock_filter.return_value = processed_df
-            mock_stats.return_value = {"count": 2, "total": -80.0}
+            mock_stats.return_value = {
+                "count": 2,
+                "total": -80.0,
+                "mean": -40.0,
+                "min": -30.0,
+                "max": -50.0,
+            }
             mock_prepare_chart.return_value = pd.DataFrame()
             mock_calc_totals.return_value = pd.DataFrame()
             mock_chart.return_value = MagicMock()
@@ -333,7 +355,9 @@ class TestMain:
             mock_validate.assert_called_once_with(mock_uploaded_file)
             mock_load_data.assert_called_once_with(mock_uploaded_file)
             mock_filter.assert_called_once()
-            mock_stats.assert_called_once()
+            # calculate_statistics est appelé 2 fois:
+            # une fois pour toutes les données, une fois après exclusions
+            assert mock_stats.call_count == 2
 
     @patch("src.main.st")
     @patch("src.main.load_data")
@@ -389,7 +413,13 @@ class TestMain:
             processed_df["OPERATION_DATE"] = datetime_series
 
             mock_filter.return_value = processed_df
-            mock_stats.return_value = {"count": 100, "total": -5000.0}
+            mock_stats.return_value = {
+                "count": 100,
+                "total": -5000.0,
+                "mean": -50.0,
+                "min": -30.0,
+                "max": -100.0,
+            }
             mock_prepare_chart.return_value = pd.DataFrame()
             mock_calc_totals.return_value = pd.DataFrame()
             mock_chart.return_value = MagicMock()
@@ -400,7 +430,9 @@ class TestMain:
 
             # Verify processing works with large dataset
             mock_filter.assert_called_once()
-            mock_stats.assert_called_once()
+            # calculate_statistics est appelé 2 fois:
+            # une fois pour toutes les données, une fois après exclusions
+            assert mock_stats.call_count == 2
             mock_logger.info.assert_any_call("Starting Bank Operations Analysis application")
 
     @patch("src.main.st")
@@ -450,7 +482,13 @@ class TestMain:
             processed_df["OPERATION_DATE"] = datetime_series
 
             mock_filter.return_value = processed_df
-            mock_stats.return_value = {"count": 3, "total": -880.0}
+            mock_stats.return_value = {
+                "count": 3,
+                "total": -880.0,
+                "mean": -293.33,
+                "min": -250.0,
+                "max": -380.0,
+            }
             mock_prepare_chart.return_value = pd.DataFrame()
             mock_calc_totals.return_value = pd.DataFrame()
             mock_chart.return_value = MagicMock()
@@ -461,4 +499,7 @@ class TestMain:
 
             # Verify edge case dates are handled properly
             mock_filter.assert_called_once()
-            mock_stats.assert_called_once()
+            # calculate_statistics est appelé 2 fois:
+            # une fois pour toutes les données, une fois après exclusions
+            assert mock_stats.call_count == 2
+            mock_load_data.assert_called_once_with(None)

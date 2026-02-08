@@ -9,6 +9,7 @@ from src.data_loader import (
     calculate_statistics,
     filter_expenses,
     load_data,
+    prepare_category_month_pivot,
     prepare_chart_data,
     prepare_summary_table,
     validate_csv_schema,
@@ -532,3 +533,143 @@ class TestPrepareSummaryTable:
         if len(result) > 0:
             # Date should be string in YYYY-MM-DD format
             assert isinstance(result["Date"].iloc[0], str)
+
+
+class TestPrepareCategoryMonthPivot:
+    """Tests for prepare_category_month_pivot function."""
+
+    def test_empty_dataframe_returns_empty(self):
+        """Test that empty DataFrame returns empty pivot table."""
+        empty_df = pd.DataFrame()
+        result = prepare_category_month_pivot(empty_df)
+
+        assert result.empty
+        assert isinstance(result, pd.DataFrame)
+
+    def test_pivot_table_structure(self, sample_expenses):
+        """Test that pivot table has correct structure."""
+        # Convert OPERATION_DATE to datetime for this test
+        sample_expenses = sample_expenses.copy()
+        sample_expenses["OPERATION_DATE"] = pd.to_datetime(sample_expenses["OPERATION_DATE"])
+
+        result = prepare_category_month_pivot(sample_expenses)
+
+        # Check that result is not empty
+        assert not result.empty
+        assert isinstance(result, pd.DataFrame)
+
+        # Check that 'Total' column exists
+        assert "Total" in result.columns
+
+        # Check that categories are in index
+        assert len(result.index) > 0
+
+    def test_pivot_table_has_month_columns(self):
+        """Test that pivot table has month columns in correct format."""
+        # Create test data with multiple months
+        test_data = pd.DataFrame(
+            {
+                "CATEGORY": ["Food", "Food", "Transport", "Transport"],
+                "SUBCATEGORY": ["Restaurant", "Groceries", "Public", "Fuel"],
+                "OPERATION_LABEL": ["Lunch", "Shopping", "Metro", "Gas"],
+                "OPERATION_DATE": pd.to_datetime(
+                    ["2026-01-15", "2026-02-10", "2026-01-20", "2026-02-05"]
+                ),
+                "AMOUNT": [-50.0, -120.0, -30.0, -60.0],
+            }
+        )
+
+        result = prepare_category_month_pivot(test_data)
+
+        # Check that month columns exist (format: YYYY-MM)
+        month_columns = [col for col in result.columns if col != "Total"]
+        assert len(month_columns) > 0
+        # Month columns should be strings in YYYY-MM format
+        for col in month_columns:
+            assert isinstance(col, str)
+            assert len(col) == 7  # YYYY-MM format
+
+    def test_pivot_table_totals_calculated_correctly(self):
+        """Test that totals are calculated correctly."""
+        # Create test data with known amounts
+        test_data = pd.DataFrame(
+            {
+                "CATEGORY": ["Food", "Food", "Transport"],
+                "SUBCATEGORY": ["Restaurant", "Groceries", "Public"],
+                "OPERATION_LABEL": ["Lunch", "Shopping", "Metro"],
+                "OPERATION_DATE": pd.to_datetime(["2026-01-15", "2026-01-20", "2026-01-25"]),
+                "AMOUNT": [-100.0, -200.0, -50.0],
+            }
+        )
+
+        result = prepare_category_month_pivot(test_data)
+
+        # Check that Food category total is 300 (100 + 200)
+        food_total = result.loc["Food", "Total"]
+        assert food_total == -300.0
+
+        # Check that Transport category total is 50
+        transport_total = result.loc["Transport", "Total"]
+        assert transport_total == -50.0
+
+    def test_pivot_table_sorted_by_total(self):
+        """Test that pivot table is sorted by total descending."""
+        test_data = pd.DataFrame(
+            {
+                "CATEGORY": ["Food", "Transport", "Housing"],
+                "SUBCATEGORY": ["Restaurant", "Public", "Rent"],
+                "OPERATION_LABEL": ["Lunch", "Metro", "Rent"],
+                "OPERATION_DATE": pd.to_datetime(["2026-01-15", "2026-01-20", "2026-01-25"]),
+                "AMOUNT": [-100.0, -50.0, -800.0],
+            }
+        )
+
+        result = prepare_category_month_pivot(test_data)
+
+        # Check that categories are sorted by total (descending)
+        totals = result["Total"].tolist()
+        assert totals == sorted(totals, reverse=True)
+
+    def test_pivot_table_with_multiple_months(self):
+        """Test pivot table with data spanning multiple months."""
+        test_data = pd.DataFrame(
+            {
+                "CATEGORY": ["Food", "Food", "Food", "Transport", "Transport"],
+                "SUBCATEGORY": ["Rest", "Rest", "Groc", "Bus", "Bus"],
+                "OPERATION_LABEL": ["L1", "L2", "S1", "T1", "T2"],
+                "OPERATION_DATE": pd.to_datetime(
+                    ["2026-01-15", "2026-02-10", "2026-03-05", "2026-01-20", "2026-02-15"]
+                ),
+                "AMOUNT": [-50.0, -60.0, -70.0, -30.0, -40.0],
+            }
+        )
+
+        result = prepare_category_month_pivot(test_data)
+
+        # Check that we have 3 month columns + Total
+        assert len(result.columns) == 4
+
+        # Check specific month values for Food category
+        assert result.loc["Food", "2026-01"] == -50.0
+        assert result.loc["Food", "2026-02"] == -60.0
+        assert result.loc["Food", "2026-03"] == -70.0
+        assert result.loc["Food", "Total"] == -180.0
+
+    def test_pivot_table_fill_value_zero(self):
+        """Test that missing values are filled with 0."""
+        test_data = pd.DataFrame(
+            {
+                "CATEGORY": ["Food", "Transport"],
+                "SUBCATEGORY": ["Restaurant", "Bus"],
+                "OPERATION_LABEL": ["Lunch", "Ticket"],
+                "OPERATION_DATE": pd.to_datetime(["2026-01-15", "2026-02-10"]),
+                "AMOUNT": [-100.0, -30.0],
+            }
+        )
+
+        result = prepare_category_month_pivot(test_data)
+
+        # Food should have 0 for February
+        assert result.loc["Food", "2026-02"] == 0.0
+        # Transport should have 0 for January
+        assert result.loc["Transport", "2026-01"] == 0.0

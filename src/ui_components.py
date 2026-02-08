@@ -7,6 +7,81 @@ from loguru import logger
 from st_aggrid import AgGrid, GridOptionsBuilder
 
 
+def display_category_month_table(pivot: pd.DataFrame) -> None:
+    """Display category × month pivot table.
+
+    Args:
+        pivot: DataFrame pivot table with categories (rows) and months (columns)
+    """
+    logger.debug(f"Displaying category × month table with {len(pivot)} categories")
+
+    if pivot.empty:
+        st.warning("⚠️ Aucune donnée à afficher dans le tableau catégories × mois")
+        return
+
+    # Configuration AG Grid pour le tableau pivot
+    gb = GridOptionsBuilder.from_dataframe(pivot)
+
+    # Configuration par défaut
+    gb.configure_default_column(
+        filterable=True,
+        sortable=True,
+        resizable=True,
+        headerHeight=50,
+    )
+
+    # Configuration de la première colonne (catégories)
+    gb.configure_column(
+        "CATEGORY",
+        header_name="Catégorie",
+        pinned="left",
+        width=200,
+    )
+
+    # Configuration des colonnes de mois et Total
+    for col in pivot.columns:
+        if col != "CATEGORY":
+            gb.configure_column(
+                col,
+                header_name=col,
+                width=120,
+                type=["numericColumn"],
+                valueFormatter="value.toFixed(0) + ' €'",
+                cellStyle={"textAlign": "right"},
+            )
+
+    # Configuration pour afficher toutes les lignes
+    gb.configure_side_bar()
+
+    grid_options = gb.build()
+    grid_options["pagination"] = False
+
+    # Affichage du tableau
+    AgGrid(
+        pivot.reset_index(),
+        gridOptions=grid_options,
+        fit_columns_on_grid_load=False,
+        theme="streamlit",
+        height=400,
+        enable_enterprise_modules=False,
+        allow_unsafe_jscode=False,
+        custom_css={
+            ".ag-header-cell-text": {
+                "font-size": "14px !important",
+                "font-weight": "bold !important",
+                "color": "#2C3E50 !important",
+            },
+            ".ag-cell": {"font-size": "14px !important", "line-height": "40px !important"},
+            ".ag-row-even": {
+                "background-color": "#F8F8F8 !important",
+            },
+            ".ag-row-odd": {
+                "background-color": "#FFFFFF !important",
+            },
+        },
+    )
+
+
 def display_sidebar_statistics(stats: dict) -> None:
     """Display statistics in the sidebar.
 

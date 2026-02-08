@@ -9,6 +9,7 @@ from src.data_loader import (
     calculate_statistics,
     filter_expenses,
     load_data,
+    prepare_category_month_pivot,
     prepare_chart_data,
     prepare_summary_table,
     validate_csv_schema,
@@ -18,6 +19,7 @@ from src.monitoring import log_performance, metrics, setup_monitoring
 from src.ui_components import (
     create_aggrid_table,
     create_stacked_bar_chart,
+    display_category_month_table,
     display_sidebar_statistics,
 )
 
@@ -187,6 +189,15 @@ def main() -> None:
     st.subheader("Tableau Récapitulatif")
     summary = prepare_summary_table(df_filtered, df_negative)
     selected_for_exclusion = create_aggrid_table(summary)
+
+    # Tableau catégories × mois
+    st.markdown("---")
+    st.subheader("📅 Dépenses par Catégorie et par Mois")
+    pivot_table = prepare_category_month_pivot(df_filtered)
+    if not pivot_table.empty:
+        display_category_month_table(pivot_table)
+    else:
+        st.info("ℹ️ Aucune donnée disponible pour le tableau catégories × mois")
 
     # Calculer les données pour le graphique en fonction des exclusions
     if not selected_for_exclusion.empty and len(selected_for_exclusion) > 0:

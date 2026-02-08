@@ -227,3 +227,52 @@ def prepare_summary_table(df: pd.DataFrame, df_negative: pd.DataFrame) -> pd.Dat
         return pd.DataFrame(
             columns=["Date", "CATEGORY", "SUBCATEGORY", "OPERATION_LABEL", "Total (€)"]
         )
+
+
+def prepare_category_month_pivot(df: pd.DataFrame) -> pd.DataFrame:
+    """Prepare pivot table with categories as rows and months as columns.
+
+    Args:
+        df: DataFrame of filtered expenses with OPERATION_DATE and CATEGORY
+
+    Returns:
+        DataFrame pivot table with categories (rows) and months (columns)
+    """
+    logger.info("Preparing category × month pivot table")
+
+    # Vérifier que le DataFrame n'est pas vide
+    if df.empty:
+        logger.warning("DataFrame is empty, returning empty pivot table")
+        return pd.DataFrame()
+
+    try:
+        # Créer une colonne pour le mois (format YYYY-MM)
+        df_copy = df.copy()
+        df_copy["Month"] = df_copy["OPERATION_DATE"].dt.to_period("M")
+
+        # Créer le tableau croisé
+        pivot = df_copy.pivot_table(
+            values="AMOUNT",
+            index="CATEGORY",
+            columns="Month",
+            aggfunc="sum",
+            fill_value=0,
+        )
+
+        # Convertir les périodes en chaînes de caractères pour l'affichage
+        pivot.columns = pivot.columns.astype(str)
+
+        # Ajouter une colonne Total
+        pivot["Total"] = pivot.sum(axis=1)
+
+        # Trier par total décroissant
+        pivot = pivot.sort_values("Total", ascending=False)
+
+        logger.info(
+            f"Pivot table prepared: {len(pivot)} categories × " f"{len(pivot.columns)-1} months"
+        )
+        return pivot
+
+    except Exception as e:
+        logger.error(f"Error preparing pivot table: {e}")
+        return pd.DataFrame()

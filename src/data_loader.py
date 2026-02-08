@@ -269,7 +269,7 @@ def prepare_category_month_pivot(df: pd.DataFrame) -> pd.DataFrame:
         pivot = pivot.sort_values("Total", ascending=False)
 
         logger.info(
-            f"Pivot table prepared: {len(pivot)} categories × " f"{len(pivot.columns)-1} months"
+            f"Pivot table prepared: {len(pivot)} categories × {len(pivot.columns) - 1} months"
         )
         return pivot
 
